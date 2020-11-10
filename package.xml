@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>asl_turtlebot</name>
+  <name>final_project</name>
   <version>0.0.0</version>
-  <description>The asl_turtlebot package</description>
+  <description>The final_project package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/asl_turtlebot</url> -->
+  <!-- <url type="website">http://wiki.ros.org/final_project</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->

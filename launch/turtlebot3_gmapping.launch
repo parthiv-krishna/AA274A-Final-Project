@@ -40,10 +40,10 @@
   </node>
 
 
-  <node pkg="asl_turtlebot" type="detector.py" name="turtlebot_detector" />
-  <node pkg="asl_turtlebot" type="pose_controller.py" name="turtlebot_pose_controller" />
-  <node pkg="asl_turtlebot" type="gazebo_plot.py" name="gazebo_plot" />
+  <node pkg="final_project" type="detector.py" name="turtlebot_detector" />
+  <node pkg="final_project" type="pose_controller.py" name="turtlebot_pose_controller" />
+  <node pkg="final_project" type="gazebo_plot.py" name="gazebo_plot" />
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot)/rviz/signs_gmapping.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find final_project)/rviz/signs_gmapping.rviz"/>
 
 </launch>
