@@ -1,0 +1,14 @@
+material broccoli/Diffuse
+{
+    receive_shadows off
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture broccoli.png
+            }
+        }
+    }
+}
