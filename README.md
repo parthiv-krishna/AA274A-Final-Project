@@ -1,4 +1,4 @@
-# asl_turtlebot
+# final_project
 
 This contains a _starting point_ for your final project. Below are _brief_ descriptions of the code. You are strongly encouraged to take a closer look into the code for more details of how and what the code does.
 
@@ -9,7 +9,7 @@ This contains a _starting point_ for your final project. Below are _brief_ descr
 
 launch/project_sim.launch: Launches gazebo with a (rough, tentative) model of the final project environment, as well as the core SLAM and detector nodes. You'll need to run your navigator and other project nodes separately.
 
-robots/asl_turtlebot.urdf.xacro, turtlebot3_burger.gazebo.xacro, turtlebot3_burger.urdf.xacro: Turtlebot 3D model definitions for gazebo.
+robots/final_project.urdf.xacro, turtlebot3_burger.gazebo.xacro, turtlebot3_burger.urdf.xacro: Turtlebot 3D model definitions for gazebo.
 
 world/project_city.world: Defines 3D model of rough, tentative representation of the final project environment.
 

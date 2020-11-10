@@ -11,25 +11,25 @@
   <rosparam param="use_tf">false</rosparam>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find asl_turtlebot)/world/project_city.world"/>
+    <arg name="world_name" value="$(find final_project)/world/project_city.world"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="debug" value="false"/>
     <arg name="gui" value="$(arg gui)"/>
   </include>
 
-  <param name="robot_description" command="$(find xacro)/xacro.py $(find asl_turtlebot)/urdf/turtlebot3_$(arg model)_gripper.urdf.xacro" />
+  <param name="robot_description" command="$(find xacro)/xacro.py $(find final_project)/urdf/turtlebot3_$(arg model)_gripper.urdf.xacro" />
 
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model turtlebot3_burger -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -param robot_description" />
 
   <!-- Load joint controller configurations from YAML file to parameter server -->
-  <rosparam file="$(find asl_turtlebot)/cfg/gripper_control.yaml" command="load"/>
+  <rosparam file="$(find final_project)/cfg/gripper_control.yaml" command="load"/>
 
   <!-- load the controllers -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
     output="screen" ns="/gripper" args="right_gripper_controller left_gripper_controller joint_state_controller"/>
 
-  <node pkg="asl_turtlebot" type="gripper_sim_controller.py" name="gripper_sim_controller" />
+  <node pkg="final_project" type="gripper_sim_controller.py" name="gripper_sim_controller" />
 
   <!-- convert joint states to TF transforms for rviz, etc -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
@@ -72,8 +72,8 @@
     <param name="lasamplestep" value="0.005"/>
   </node>
 
-  <node pkg="asl_turtlebot" type="goal_commander.py" name="goal_commander" />
-  <node pkg="asl_turtlebot" type="detector.py" name="turtlebot_detector" />
+  <node pkg="final_project" type="goal_commander.py" name="goal_commander" />
+  <node pkg="final_project" type="detector.py" name="turtlebot_detector" />
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot)/rviz/project_sim.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find final_project)/rviz/project_sim.rviz"/>
 </launch>
