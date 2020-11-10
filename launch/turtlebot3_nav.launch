@@ -1,5 +1,5 @@
 <launch>
 
-  <node pkg="asl_turtlebot" type="navigator.py" name="turtlebot_navigator" output="screen" />
+  <node pkg="final_project" type="navigator.py" name="turtlebot_navigator" output="screen" />
   
 </launch>

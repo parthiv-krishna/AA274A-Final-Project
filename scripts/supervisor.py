@@ -3,7 +3,7 @@
 from enum import Enum
 
 import rospy
-from asl_turtlebot.msg import DetectedObject
+from final_project.msg import DetectedObject
 from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
 from std_msgs.msg import Float32MultiArray, String
