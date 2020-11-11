@@ -6,6 +6,11 @@
   <arg name="gui" default="true"/>
 
 
+<!--  
+  <env name="GAZEBO_MODEL_PATH" value="$(find final_project)/models"/>
+  <env name="GAZEBO_RESOURCE_PATH" value="$(find final_project)/media/materials"/>
+-->
+
   <rosparam param="sim">false</rosparam>
   <rosparam param="map">true</rosparam>
   <rosparam param="use_tf">false</rosparam>
@@ -78,6 +83,7 @@
 
   <node pkg="final_project" type="goal_commander.py" name="goal_commander" />
   <node pkg="final_project" type="detector.py" name="turtlebot_detector" />
+  <node pkg="final_project" type="navigator.py" name="navigator" />
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find final_project)/rviz/project_sim.rviz"/>
 </launch>
