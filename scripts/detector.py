@@ -158,16 +158,10 @@ class Detector:
         that is a unit vector in the direction of the pixel, in the camera frame """
 
         ########## Code starts here ##########
-        # TODO: Compute x, y, z.
-        cx, cy = self.cx, self.cy
-        fx, fy = self.fx, self.fy
-
-        x = (u - cx) / fx
-        y = (v - cy) / fy
-        z = 1
-        # Normalize since we want a unit vector
-        norm = np.sqrt(x*x + y*y + 1)
-        x, y, z = x/norm, y/norm, z/norm
+        # Compute x, y, z.
+        x = (u - self.cx)/self.fx
+        y = (v - self.cy)/self.fy
+        z = 1.
         ########## Code ends here ##########
 
         return x, y, z
@@ -263,11 +257,18 @@ class Detector:
         the focal lengths. """
 
         ########## Code starts here ##########
-        # TODO: Extract camera intrinsic parameters.
-        self.cx = 0.
-        self.cy = 0.
-        self.fx = 1.
-        self.fy = 1.
+        # Extract camera intrinsic parameters.
+        h = msg.height
+        w = msg.width
+        distortion_params = msg.D
+        intr_camera_matrix = msg.K
+        rectification_matrix = msg.R
+        projection_matrix = msg.P
+
+        self.cx = intr_camera_matrix[2]
+        self.cy = intr_camera_matrix[5]
+        self.fx = intr_camera_matrix[0]
+        self.fy = intr_camera_matrix[4]
         ########## Code ends here ##########
 
     def laser_callback(self, msg):
@@ -282,3 +283,4 @@ class Detector:
 if __name__=='__main__':
     d = Detector()
     d.run()
+
