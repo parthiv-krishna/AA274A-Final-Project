@@ -32,6 +32,8 @@ class Navigator:
     """
     def __init__(self):
         rospy.init_node('turtlebot_navigator', anonymous=True)
+        #with open("points.txt","w") as f:
+        #    f.write("x, y, theta\n")
         self.mode = Mode.IDLE
 
         # current state
@@ -121,6 +123,9 @@ class Navigator:
         loads in goal if different from current goal, and replans
         """
         if data.x != self.x_g or data.y != self.y_g or data.theta != self.theta_g:
+            #with open("points.txt","a+") as f:
+            #    line = str(data.x) + ", " + str(data.y) + ", " + str(data.theta)
+            #    f.write(line + "\n")
             self.x_g = data.x
             self.y_g = data.y
             self.theta_g = data.theta
