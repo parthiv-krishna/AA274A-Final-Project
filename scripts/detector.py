@@ -159,9 +159,15 @@ class Detector:
 
         ########## Code starts here ##########
         # TODO: Compute x, y, z.
-        x = 0.
-        y = 0.
-        z = 1.
+        cx, cy = self.cx, self.cy
+        fx, fy = self.fx, self.fy
+
+        x = (u - cx) / fx
+        y = (v - cy) / fy
+        z = 1
+        # Normalize since we want a unit vector
+        norm = np.sqrt(x*x + y*y + 1)
+        x, y, z = x/norm, y/norm, z/norm
         ########## Code ends here ##########
 
         return x, y, z
