@@ -8,6 +8,7 @@ from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
 from std_msgs.msg import Float32MultiArray, String
 import tf
+import Queue
 
 class Mode(Enum):
     """State machine modes. Feel free to change."""
@@ -75,14 +76,18 @@ class Supervisor:
         self.mode = Mode.IDLE
         self.prev_mode = None  # For printing purposes
 
+        self.explore = False
+        self.explore_queue = Queue.Queue()
         ########## PUBLISHERS ##########
 
         # Command pose for controller
         self.pose_goal_publisher = rospy.Publisher('/cmd_pose', Pose2D, queue_size=10)
+        self.nav_goal_publisher = rospy.Publisher('/cmd_nav', Pose2D, queue_size=10)
 
         # Command vel (used for idling)
         self.cmd_vel_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
+        self.debug_publisher = rospy.Publisher('/supervisor_debug', String, queue_size=10)
         ########## SUBSCRIBERS ##########
 
         # Stop sign detector
@@ -103,7 +108,22 @@ class Supervisor:
             self.x_g, self.y_g, self.theta_g = 1.5, -4., 0.
             self.mode = Mode.NAV
         
+    
+    ########## EXPLORATION FUNCTIONS ##########
+    def explore_load_goals (self, filename):
+        self.debug_publisher.publish("EXPLORING!")
+        fileObj = open(filename, "r+")
+        fileObj.readline() #Get rid of the first line (x, y, theta)
 
+        line = fileObj.readline()
+        while line != '':
+            spl = line.split(", ")
+            point_tuple = (float(spl[0]), float(spl[1]), float(spl[2]))
+            self.debug_publisher.publish("Loaded: {0}".format(str(point_tuple)))
+            self.explore_queue.put(point_tuple)
+            line = fileObj.readline()
+        
+        self.explore = True
     ########## SUBSCRIBER CALLBACKS ##########
 
     def gazebo_callback(self, msg):
@@ -119,6 +139,9 @@ class Supervisor:
 
     def rviz_goal_callback(self, msg):
         """ callback for a pose goal sent through rviz """
+        if self.explore:
+            self.debug_publisher.publish("Ignoring RVIZ goals in exploration state")
+            return
         origin_frame = "/map" if self.params.mapping else "/odom"
         print("Rviz command received!")
 
@@ -132,12 +155,18 @@ class Supervisor:
                           nav_pose_origin.pose.orientation.w)
             euler = tf.transformations.euler_from_quaternion(quaternion)
             self.theta_g = euler[2]
+            
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             pass
 
+        self.debug_publisher.publish("___RECIEVED TOUCH GOAL___")
         self.mode = Mode.NAV
 
     def nav_pose_callback(self, msg):
+        if self.explore:
+            self.debug_publisher.publish("Ignoring nav goals in exploration state")
+            return
+        
         self.x_g = msg.x
         self.y_g = msg.y
         self.theta_g = msg.theta
@@ -179,7 +208,7 @@ class Supervisor:
         nav_g_msg.y = self.y_g
         nav_g_msg.theta = self.theta_g
 
-        self.pose_goal_publisher.publish(nav_g_msg)
+        self.nav_goal_publisher.publish(nav_g_msg)
 
     def stay_idle(self):
         """ sends zero velocity to stay put """
@@ -227,10 +256,10 @@ class Supervisor:
         """ the main loop of the robot. At each iteration, depending on its
         mode (i.e. the finite state machine's state), if takes appropriate
         actions. This function shouldn't return anything """
-
+        print("##########################################################################################")
         if not self.params.use_gazebo:
             try:
-                origin_frame = "/map" if mapping else "/odom"
+                origin_frame = "/map" if self.params.mapping else "/odom"
                 translation, rotation = self.trans_listener.lookupTransform(origin_frame, '/base_footprint', rospy.Time(0))
                 self.x, self.y = translation[0], translation[1]
                 self.theta = tf.transformations.euler_from_quaternion(rotation)[2]
@@ -245,7 +274,16 @@ class Supervisor:
         ########## Code starts here ##########
         if self.mode == Mode.IDLE:
             # Send zero velocity
-            self.stay_idle()
+            if self.explore == True and self.explore_queue.empty() == False:
+                goal_tuple = self.explore_queue.get()
+                self.x_g = goal_tuple[0]
+                self.y_g = goal_tuple[1]
+                self.theta_g = goal_tuple[2]
+
+                self.debug_publisher.publish("Pulled Goal: {0}".format(str(goal_tuple)))
+                self.mode = Mode.NAV
+            else:
+                self.stay_idle()
 
         elif self.mode == Mode.POSE:
             # Moving towards a desired pose
@@ -285,6 +323,10 @@ class Supervisor:
             rate.sleep()
 
 
+
+
 if __name__ == '__main__':
     sup = Supervisor()
+    sup.explore_load_goals("/home/mason/catkin_ws/src/AA274A-Final-Project/scripts/points.txt")
+    sup.debug_publisher.publish("HERE I AM")
     sup.run()

@@ -3,7 +3,7 @@
 import rospy
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
 from geometry_msgs.msg import Twist, Pose2D, PoseStamped
-from std_msgs.msg import String
+from std_msgs.msg import String, Int16 
 import tf
 import numpy as np
 from numpy import linalg
@@ -76,7 +76,7 @@ class Navigator:
 
         # threshold at which navigator switches from trajectory to pose control
         self.near_thresh = 0.2
-        self.at_thresh = 0.02
+        self.at_thresh = 0.1 #0.02
         self.at_thresh_theta = 0.05
 
         # trajectory smoothing
@@ -100,6 +100,7 @@ class Navigator:
         self.nav_smoothed_path_pub = rospy.Publisher('/cmd_smoothed_path', Path, queue_size=10)
         self.nav_smoothed_path_rej_pub = rospy.Publisher('/cmd_smoothed_path_rejected', Path, queue_size=10)
         self.nav_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.nav_mode_pub = rospy.Publisher('/nav_mode', Int16, queue_size=10)
 
         self.trans_listener = tf.TransformListener()
 
@@ -197,6 +198,8 @@ class Navigator:
 
     def switch_mode(self, new_mode):
         rospy.loginfo("Switching from %s -> %s", self.mode, new_mode)
+        #TODO: Figure out how to get the mode over ROS, custom or convert back to integer
+        self.nav_mode_pub.publish(int(new_mode.value))
         self.mode = new_mode
 
     def publish_planned_path(self, path, publisher):
