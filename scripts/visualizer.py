@@ -10,13 +10,12 @@ import numpy as np
 
 from enum import IntEnum
 
-
 MARKER_NAMESPACE = "robot"
 
 
 ## Marker IDs
 class RobotMarkerId(IntEnum):
-    CURRENT_POSE = 100
+    CURRENT_POSE = 100 # Don't use zero as that's already used by the 2d nav goal or something.
 
 
 ## Markers
@@ -78,8 +77,7 @@ class Visualizer(object):
         print("Visualizer node started...")
         rate = rospy.Rate(10) # 10 Hz
         while not rospy.is_shutdown():
-            rospy.loginfo(self.current_pose.x)
-            
+            # rospy.loginfo(self.current_pose.theta)
             self.publish_current_pose() # /robot/pose/current
             rate.sleep()
 
