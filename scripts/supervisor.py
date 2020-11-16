@@ -29,7 +29,7 @@ class SupervisorParams:
         self.use_gazebo = rospy.get_param("sim")
 
         # How is nav_cmd being decided -- human manually setting it, or rviz
-        self.rviz = rospy.get_param("rviz")
+        self.rviz = rospy.get_param("/supervisor/rviz")
 
         # If using gmapping, we will have a map frame. Otherwise, it will be odom frame.
         self.mapping = rospy.get_param("map")
