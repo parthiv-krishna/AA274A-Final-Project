@@ -1,0 +1,44 @@
+material apple/Diffuse
+{
+    receive_shadows off
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture apple.png
+            }
+        }
+    }
+}
+
+material banana/Diffuse
+{
+    receive_shadows off
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture banana.png
+            }
+        }
+    }
+}
+
+material broccoli/Diffuse
+{
+    receive_shadows off
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture broccoli.png
+            }
+        }
+    }
+}
