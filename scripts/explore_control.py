@@ -10,6 +10,7 @@ from std_msgs.msg import Float32MultiArray, String, Int16
 import tf
 import Queue
 import time
+import rospkg
 
 class Mode(Enum):
     IDLE = 0
@@ -74,7 +75,9 @@ class Explorer:
 
 def main():
     expl = Explorer()
-    expl.explore_load_goals("/home/mason/catkin_ws/src/AA274A-Final-Project/scripts/points.txt")
+    rospack = rospkg.RosPack()
+    package_dir = rospack.get_path("final_project")
+    expl.explore_load_goals(package_dir + "/scripts/points.txt")
     expl.control_loop()
 
     
