@@ -1,0 +1,44 @@
+material food1/Diffuse
+{
+    receive_shadows off
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture apple.png
+            }
+        }
+    }
+}
+
+material food2/Diffuse
+{
+    receive_shadows off
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture banana.png
+            }
+        }
+    }
+}
+
+material food3/Diffuse
+{
+    receive_shadows off
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture broccoli.png
+            }
+        }
+    }
+}

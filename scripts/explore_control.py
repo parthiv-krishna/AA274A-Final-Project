@@ -46,7 +46,6 @@ class Explorer:
             point_tuple = (float(spl[0]), float(spl[1]), float(spl[2]))
             #print("Loaded: {0}".format(str(point_tuple)))
             self.explore_queue.put(point_tuple)
-            #self.explore_list.append(point_tuple)
             line = fileObj.readline()
     
     def send_nav_command(self, point_tuple):

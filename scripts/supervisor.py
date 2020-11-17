@@ -10,6 +10,8 @@ from std_msgs.msg import Float32MultiArray, String
 import tf
 import Queue
 
+mapping = True
+
 class Mode(Enum):
     """State machine modes. Feel free to change."""
     IDLE = 1
