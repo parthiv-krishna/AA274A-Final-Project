@@ -88,6 +88,7 @@
   <node pkg="final_project" type="goal_commander.py" name="goal_commander" />
   <node pkg="final_project" type="detector.py" name="turtlebot_detector" />
   <node pkg="final_project" type="navigator.py" name="navigator" />
+  <node pkg="final_project" type="visualizer.py" name="visualizer" />
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find final_project)/rviz/project_sim.rviz"/>
 </launch>
