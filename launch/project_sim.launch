@@ -14,6 +14,10 @@
   <rosparam param="sim">false</rosparam>
   <rosparam param="map">true</rosparam>
   <rosparam param="use_tf">false</rosparam>
+  
+  
+  <!-- runs first so that it randomizes before gazebo is launched -->
+  <node pkg="final_project" type="vendor_randomizer.py" name="vendor_randomizer" />
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find final_project)/world/project_city.world"/>
