@@ -78,7 +78,7 @@ class Visualizer(object):
         rate = rospy.Rate(10) # 10 Hz
         while not rospy.is_shutdown():
             # rospy.loginfo(self.current_pose.theta)
-            self.publish_current_pose() # /robot/pose/current
+            self.publish_current_pose() # /robot/vis/pose/current
             rate.sleep()
 
 
