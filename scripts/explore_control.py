@@ -28,7 +28,14 @@ class Explorer:
 
         self.mode = Mode.IDLE
         
+        self.x = 0.0
+        self.y = 0.0
+        self.theta = 0.0
+
         self.nav_goal_publisher = rospy.Publisher("/cmd_nav", Pose2D, queue_size=1)
+
+        self.trans_listener = tf.TransformListener()
+
         rospy.Subscriber("/nav_mode", Int16, self.nav_mode_callback)
         time.sleep(1) #Break time for the publisher to allow subsciber to contact/Establish connection
 
@@ -64,11 +71,26 @@ class Explorer:
             if self.explore_queue.empty():
                 return
             
-            if self.mode == Mode.IDLE or self.mode == Mode.PARK:
+            try:
+                (translation,rotation) = self.trans_listener.lookupTransform('/map', '/base_footprint', rospy.Time(0))
+                self.x = translation[0]
+                self.y = translation[1]
+                euler = tf.transformations.euler_from_quaternion(rotation)
+                self.theta = euler[2]
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+                self.current_plan = []
+                rospy.loginfo("Navigator: waiting for state info")
+                self.mode = Mode.IDLE
+                print e
+                pass
+
+            if self.mode == Mode.IDLE:
                 next_point = self.explore_queue.get()
                 self.send_nav_command(next_point)
                 self.mode = Mode.NAV
             
+            else:
+                print ("Position [x, y, theta]: {0}, {1}, {2}".format(self.x, self.y, self.theta))
             rate.sleep()
 
 
