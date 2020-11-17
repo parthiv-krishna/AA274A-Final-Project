@@ -12,14 +12,11 @@ import Queue
 import time
 
 class Mode(Enum):
-    """State machine modes. Feel free to change."""
     IDLE = 0
-    POSE = 1
-    STOP = 2
-    CROSS = 3
+    ALIGN = 1
+    TRACK = 2
+    PARK = 3
     NAV = 4
-    MANUAL = 5
-
 
 
 class Explorer:
@@ -67,7 +64,7 @@ class Explorer:
             if self.explore_queue.empty():
                 return
             
-            if self.mode == Mode.IDLE or self.mode == Mode.CROSS:
+            if self.mode == Mode.IDLE or self.mode == Mode.PARK:
                 next_point = self.explore_queue.get()
                 self.send_nav_command(next_point)
                 self.mode = Mode.NAV
