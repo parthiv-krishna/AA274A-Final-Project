@@ -162,6 +162,11 @@ class AStar(object):
                 set membership efficiently using the syntax "if item in set".
         """
         ########## Code starts here ##########
+        if not self.is_free(self.x_goal):
+            print("Goal is not free")
+            return False
+        
+        
         while len(self.open_set) > 0:
             x_current = self.find_best_est_cost_through()
             if x_current == self.x_goal:

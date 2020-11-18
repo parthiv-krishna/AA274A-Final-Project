@@ -332,6 +332,10 @@ class Visualizer(object):
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             pass # Try again next loop
 
+        # Publishers
+        self.current_pose_pub       = rospy.Publisher('robot/vis/pose/current', Marker, queue_size=10)
+        self.current_footprint_pub  = rospy.Publisher('robot/vis/footprint', Marker, queue_size=10)
+        self.frustum_pub            = rospy.Publisher('robot/vis/frustum', Marker, queue_size=10)
 
     def detection_cb(self, data):
         self.last_detection_time = rospy.Time().now()

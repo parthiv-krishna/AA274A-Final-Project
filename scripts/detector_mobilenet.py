@@ -22,6 +22,8 @@ USE_TF = True
 # minimum score for positive detection
 MIN_SCORE = .5
 
+
+
 def load_object_labels(filename):
     """ loads the coco object readable name """
 
@@ -90,9 +92,10 @@ class Detector:
             # this works well in the real world, but requires
             # good computational resources
             with self.detection_graph.as_default():
-                (boxes, scores, classes, num) = self.sess.run(
-                [self.d_boxes,self.d_scores,self.d_classes,self.num_d],
-                feed_dict={self.image_tensor: image_np_expanded})
+                with tf.device("/device:XLA_GPU:5"):
+                    (boxes, scores, classes, num) = self.sess.run(
+                    [self.d_boxes,self.d_scores,self.d_classes,self.num_d],
+                    feed_dict={self.image_tensor: image_np_expanded})
 
             return self.filter(boxes[0], scores[0], classes[0], num[0])
 

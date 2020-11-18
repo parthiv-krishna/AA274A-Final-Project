@@ -60,7 +60,7 @@
     <param name="linearUpdate" value="0.2"/>
     <param name="angularUpdate" value="0.2"/>
     <param name="temporalUpdate" value="0.5"/>
-    <param name="delta" value="0.05"/>
+    <param name="delta" value="0.03"/>
     <param name="lskip" value="0"/>
     <param name="particles" value="120"/>
     <param name="sigma" value="0.05"/>
@@ -84,12 +84,21 @@
     <param name="lasamplerange" value="0.005"/>
     <param name="lasamplestep" value="0.005"/>
   </node>
-
+  
+  
+  <node pkg="final_project" type="map_inflator.py" name="map_inflator" />
   <node pkg="final_project" type="goal_commander.py" name="goal_commander" />
+<<<<<<< HEAD
   <!-- <node pkg="final_project" type="detector.py" name="detector" /> -->
   <node pkg="final_project" type="detector_mobilenet.py" name="detector" />
   <!-- <node pkg="final_project" type="navigator.py" name="navigator" /> -->
   <!-- <node pkg="final_project" type="visualizer.py" name="visualizer" /> -->
+=======
+  <node pkg="final_project" type="detector_mobilenet.py" name="turtlebot_detector" />
+  <node pkg="final_project" type="navigator.py" name="navigator" />
+  <node pkg="final_project" type="visualizer.py" name="visualizer" />
+  <node pkg="final_project" type="vendor_locator.py" name="vendor_locator" />
+>>>>>>> master
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find final_project)/rviz/project_sim.rviz"/>
 </launch>

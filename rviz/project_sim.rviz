@@ -6,6 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+<<<<<<< HEAD
+=======
+        - /TF1
+>>>>>>> master
         - /TF1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 554
@@ -102,7 +106,7 @@ Visualization Manager:
         imu_link:
           Value: false
         map:
-          Value: true
+          Value: false
         odom:
           Value: true
       Marker Scale: 1
@@ -172,6 +176,7 @@ Visualization Manager:
         robot: true
       Queue Size: 100
       Value: true
+<<<<<<< HEAD
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /robot/vis/bboxes
@@ -188,6 +193,8 @@ Visualization Manager:
         robot: true
       Queue Size: 100
       Value: true
+=======
+>>>>>>> master
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -213,25 +220,42 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
+<<<<<<< HEAD
       Distance: 5.62931776
+=======
+      Distance: 10.7847672
+>>>>>>> master
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
+<<<<<<< HEAD
         X: 2.92946601
         Y: 0.115523927
         Z: -0.0917241201
+=======
+        X: 1.06825674
+        Y: -0.76431787
+        Z: -0.771905482
+>>>>>>> master
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
+<<<<<<< HEAD
       Pitch: 0.604798615
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
       Yaw: 1.2554127
+=======
+      Pitch: 0.455398023
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
+      Yaw: 1.09539771
+>>>>>>> master
     Saved: ~
 Window Geometry:
   Displays:
@@ -248,6 +272,12 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
+<<<<<<< HEAD
   Width: 1200
   X: 624
   Y: 66
+=======
+  Width: 120
+  X: 66
+  Y: 24
+>>>>>>> master

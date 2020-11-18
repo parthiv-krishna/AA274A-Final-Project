@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import rospy
+import rospkg
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
 from geometry_msgs.msg import Twist, Pose2D, PoseStamped
-from std_msgs.msg import String
+from std_msgs.msg import String, Int16
 import tf
 import numpy as np
 from numpy import linalg
@@ -24,16 +25,24 @@ class Mode(Enum):
     ALIGN = 1
     TRACK = 2
     PARK = 3
+    
+SAVE_POINTS = False
 
 class Navigator:
     """
     This node handles point to point turtlebot motion, avoiding obstacles.
     It is the sole node that should publish to cmd_vel
     """
+    
     def __init__(self):
+    
+        rospack = rospkg.RosPack()
+        package_dir = rospack.get_path("final_project")
+        self.points_path = package_dir + "/scripts/points.txt"
         rospy.init_node('turtlebot_navigator', anonymous=True)
-        #with open("points.txt","w") as f:
-        #    f.write("x, y, theta\n")
+        if SAVE_POINTS:
+            with open(self.points_path, "w") as f:
+                f.write("x, y, theta\n")
         self.mode = Mode.IDLE
 
         # current state
@@ -100,14 +109,14 @@ class Navigator:
         self.nav_smoothed_path_pub = rospy.Publisher('/cmd_smoothed_path', Path, queue_size=10)
         self.nav_smoothed_path_rej_pub = rospy.Publisher('/cmd_smoothed_path_rejected', Path, queue_size=10)
         self.nav_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.nav_mode_pub = rospy.Publisher('/nav_mode', Int16, queue_size=10)
         # Publish robot's perception of own state
         self.robot_pose_current_pub = rospy.Publisher('/robot/pose/current', Pose2D, queue_size=10)
-
         self.trans_listener = tf.TransformListener()
 
         self.cfg_srv = Server(NavigatorConfig, self.dyn_cfg_callback)
 
-        rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
+        rospy.Subscriber('/map_inflated', OccupancyGrid, self.map_callback)
         rospy.Subscriber('/map_metadata', MapMetaData, self.map_md_callback)
         rospy.Subscriber('/cmd_nav', Pose2D, self.cmd_nav_callback)
 
@@ -125,9 +134,10 @@ class Navigator:
         loads in goal if different from current goal, and replans
         """
         if data.x != self.x_g or data.y != self.y_g or data.theta != self.theta_g:
-            #with open("points.txt","a+") as f:
-            #    line = str(data.x) + ", " + str(data.y) + ", " + str(data.theta)
-            #    f.write(line + "\n")
+            if SAVE_POINTS:
+                with open(self.points_path,"a+") as f:
+                    line = str(data.x) + ", " + str(data.y) + ", " + str(data.theta)
+                    f.write(line + "\n")
             self.x_g = data.x
             self.y_g = data.y
             self.theta_g = data.theta
@@ -199,6 +209,7 @@ class Navigator:
 
     def switch_mode(self, new_mode):
         rospy.loginfo("Switching from %s -> %s", self.mode, new_mode)
+        self.nav_mode_pub.publish(int(new_mode.value))
         self.mode = new_mode
 
     def publish_planned_path(self, path, publisher):
