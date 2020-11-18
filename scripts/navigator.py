@@ -3,7 +3,7 @@
 import rospy
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
 from geometry_msgs.msg import Twist, Pose2D, PoseStamped
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 import tf
 import numpy as np
 from numpy import linalg
@@ -100,15 +100,18 @@ class Navigator:
         self.nav_smoothed_path_pub = rospy.Publisher('/cmd_smoothed_path', Path, queue_size=10)
         self.nav_smoothed_path_rej_pub = rospy.Publisher('/cmd_smoothed_path_rejected', Path, queue_size=10)
         self.nav_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.close_to_pub = rospy.Publisher('/navigator/close_to', Bool, queue_size=10) 
 
         self.trans_listener = tf.TransformListener()
 
         self.cfg_srv = Server(NavigatorConfig, self.dyn_cfg_callback)
 
-        rospy.Subscriber('/map_inflated', OccupancyGrid, self.map_callback)
+        #rospy.Subscriber('/map_inflated', OccupancyGrid, self.map_callback)
+        rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
         rospy.Subscriber('/map_metadata', MapMetaData, self.map_md_callback)
         rospy.Subscriber('/cmd_nav', Pose2D, self.cmd_nav_callback)
-
+        rospy.Subscriber('/should_stop', Bool, self.should_stop_callback)
+        self.should_stop = False
         print "finished init"
         
     def dyn_cfg_callback(self, config, level):
@@ -118,6 +121,11 @@ class Navigator:
         self.pose_controller.k3 = config["k3"]
         return config
 
+    def should_stop_callback(self, data):
+        self.should_stop = data.data
+        if self.should_stop:
+            self.current_plan_duration += rospy.get_param("~stop_time", 3.)
+
     def cmd_nav_callback(self, data):
         """
         loads in goal if different from current goal, and replans
@@ -126,6 +134,9 @@ class Navigator:
             #with open("points.txt","a+") as f:
             #    line = str(data.x) + ", " + str(data.y) + ", " + str(data.theta)
             #    f.write(line + "\n")
+            close_to = Bool()
+            close_to.data = False
+            self.close_to_pub.publish(close_to)
             self.x_g = data.x
             self.y_g = data.y
             self.theta_g = data.theta
@@ -231,8 +242,10 @@ class Navigator:
         are all properly set up / with the correct goals loaded
         """
         t = self.get_current_plan_time()
-
-        if self.mode == Mode.PARK:
+        
+        if self.should_stop:
+            V, om = 0, 0
+        elif self.mode == Mode.PARK:
             V, om = self.pose_controller.compute_control(self.x, self.y, self.theta, t)
         elif self.mode == Mode.TRACK:
             V, om = self.traj_controller.compute_control(self.x, self.y, self.theta, t)
@@ -367,6 +380,9 @@ class Navigator:
                     self.replan() # we aren't near the goal but we thought we should have been, so replan
             elif self.mode == Mode.PARK:
                 if self.at_goal():
+                    close_to = Bool()
+                    close_to.data = True
+                    self.close_to_pub.publish(close_to)
                     # forget about goal:
                     self.x_g = None
                     self.y_g = None
