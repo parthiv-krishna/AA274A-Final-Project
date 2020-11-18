@@ -1,0 +1,1 @@
+PointOfInterest[] pois

@@ -4,12 +4,12 @@ import rospy
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
 from geometry_msgs.msg import Point, Quaternion, Twist, Transform, TransformStamped, Vector3
 from visualization_msgs.msg import Marker, MarkerArray
-from std_msgs.msg import String
+from std_msgs.msg import String, ColorRGBA
 from tf2_msgs.msg import TFMessage
 import tf
 import numpy as np
 
-from final_project.msg import DetectedObject, DetectedObjectList
+from final_project.msg import DetectedObject, DetectedObjectList, PointOfInterest, PointOfInterestList
 
 import copy
 from enum import IntEnum
@@ -22,6 +22,8 @@ class RobotMarkerId(IntEnum):
     CURRENT_FOOTPRINT = 101
     FRUSTUM = 102
     BBOX = 103
+    POI = 104
+    ZONES = 105
 
     # IDs 200-299 reserved for bounding box text markers
     BBOX_TEXT_START = 200
@@ -261,20 +263,69 @@ class BboxTextMarker(Marker):
             self.text = detection.name
 
 
-class VendorMarker(Marker):
-    def __init__(self, marker_id):
-        super(VendorMarker, self).__init__()
-        # Stub
+class PoiMarker(Marker):
+    def __init__(self, marker_id, poilist):
+        super(PoiMarker, self).__init__()
+        self.header.frame_id = "map"
+        self.header.stamp = rospy.Time()
+        self.ns = MARKER_NAMESPACE
+        self.id = marker_id
+        self.type = self.POINTS
+        self.action = 0
+
+        self.scale.x = 0.07
+        self.scale.y = 0.07
+        self.scale.z = 0.0
+
+        for poi in poilist.pois:
+            pos = poi.position
+            name = poi.name
+            point = Point(pos.x, pos.y, pos.z)
+
+            self.points.append(point)
+            if name == 'stop_sign':
+                color = ColorRGBA(0.3, 0.3, 0.3, 1.0)
+            elif name == 'apple':
+                color = ColorRGBA(1.0, 0.2, 0.2, 1.0)
+            elif name == 'banana':
+                color = ColorRGBA(1.0, 1.0, 0.0, 1.0)
+            elif name == 'broccoli':
+                color = ColorRGBA(0.3, 0.8, 0.3, 1.0)
+            else: # Unknown
+                color = ColorRGBA(1.0, 1.0, 1.0, 1.0)
+            self.colors.append(color)
 
 
-class VendorZoneMarker(Marker):
-    def __init__(self, marker, id):
-        super(VendorZoneMarker, self).__init__()
-        # Stub
 
+class ZoneMarker(Marker):
+    def __init__(self, marker_id, poilist):
+        super(ZoneMarker, self).__init__()
+        self.header.frame_id = "map"
+        self.header.stamp = rospy.Time()
+        self.ns = MARKER_NAMESPACE
+        self.id = marker_id
+        self.type = self.SPHERE_LIST
+        self.action = 0
 
+        self.scale.x = 0.2
 
+        for poi in poilist.pois:
+            pos = poi.position
+            name = poi.name
+            point = Point(pos.x, pos.y, 0.0)
 
+            self.points.append(point)
+            if name == 'stop_sign':
+                color = ColorRGBA(0.3, 0.3, 0.3, 1.0)
+            elif name == 'apple':
+                color = ColorRGBA(1.0, 0.2, 0.2, 1.0)
+            elif name == 'banana':
+                color = ColorRGBA(1.0, 1.0, 0.0, 1.0)
+            elif name == 'broccoli':
+                color = ColorRGBA(0.3, 0.8, 0.3, 1.0)
+            else: # Unknown
+                color = ColorRGBA(1.0, 1.0, 1.0, 1.0)
+            self.colors.append(color)
 
 
 
@@ -304,9 +355,13 @@ class Visualizer(object):
         self.frustum_pub            = rospy.Publisher('robot/vis/frustum', Marker, queue_size=10)
         self.bbox_pub               = rospy.Publisher('robot/vis/bboxes', Marker, queue_size=10)
         self.bbox_text_pub          = rospy.Publisher('robot/vis/bbox_text', Marker, queue_size=10)
+        self.poi_pub                = rospy.Publisher('robot/vis/poi', Marker, queue_size=10)
+        self.zones_pub              = rospy.Publisher('robot/vis/zones', Marker, queue_size=10)
 
         # Subscribers
         self.detector_sub = rospy.Subscriber('/detector/objects', DetectedObjectList, self.detection_cb)
+        self.poi_sub      = rospy.Subscriber('/robot/poi', PointOfInterestList, self.poi_cb)
+        self.zone_sub     = rospy.Subscriber('/robot/zones', PointOfInterestList, self.zone_cb)
 
 
     def update_current_pose(self):
@@ -332,10 +387,6 @@ class Visualizer(object):
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             pass # Try again next loop
 
-        # Publishers
-        self.current_pose_pub       = rospy.Publisher('robot/vis/pose/current', Marker, queue_size=10)
-        self.current_footprint_pub  = rospy.Publisher('robot/vis/footprint', Marker, queue_size=10)
-        self.frustum_pub            = rospy.Publisher('robot/vis/frustum', Marker, queue_size=10)
 
     def detection_cb(self, data):
         self.last_detection_time = rospy.Time().now()
@@ -349,6 +400,16 @@ class Visualizer(object):
             return True
         else:
             return False
+
+
+    def poi_cb(self, pointofinterestlist):
+        marker = PoiMarker(RobotMarkerId.POI, pointofinterestlist)
+        self.poi_pub.publish(marker)
+
+    
+    def zone_cb(self, pointofinterestlist):
+        marker = ZoneMarker(RobotMarkerId.ZONES, pointofinterestlist)
+        self.zones_pub.publish(marker)
 
 
     def publish_pose_marker(self):
@@ -379,14 +440,13 @@ class Visualizer(object):
         n = len(self.detections.ob_msgs)
         self.max_simul_bboxes = max(self.max_simul_bboxes, n)
         for idx in range(self.max_simul_bboxes):
-            if idx < n:
+            if idx < n and detections is not None:
                 detection = detections.ob_msgs[idx]
                 marker = BboxTextMarker(RobotMarkerId.BBOX_TEXT_START+idx, self.camera_tf, self.theta, detection)
             else:
                 marker = BboxTextMarker(RobotMarkerId.BBOX_TEXT_START+idx, self.camera_tf, self.theta, None)
             self.bbox_text_pub.publish(marker)
  
-
 
     def shutdown_callback(self):
         pass # TODO: Delete all markers maybe

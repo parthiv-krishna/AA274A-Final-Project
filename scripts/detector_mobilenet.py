@@ -5,6 +5,7 @@ import os
 # watch out on the order for the next two imports lol
 from tf import TransformListener
 import tensorflow as tf
+from tensorflow.python.client import device_lib
 import numpy as np
 from sensor_msgs.msg import CompressedImage, Image, CameraInfo, LaserScan
 from final_project.msg import DetectedObject, DetectedObjectList
@@ -42,11 +43,21 @@ class Detector:
 
     def __init__(self):
         rospy.init_node('turtlebot_detector', anonymous=True)
+
         self.bridge = CvBridge()
 
         self.detected_objects_pub = rospy.Publisher('/detector/objects', DetectedObjectList, queue_size=10)
 
         if USE_TF:
+            devices = [x.name for x in device_lib.list_local_devices() if x.device_type=='XLA_GPU']
+            if '/device:XLA_GPU:5' in devices:
+                self.device = '/device:XLA_GPU:5' # Target device in Genbu env
+            elif '/device:XLA_GPU:0':
+                self.device = '/device:XLA_GPU:0' # Target device in Li's env
+            else:
+                self.device = '/device:GPU:0' # Common fallback for unknown env
+            print("Detector node running on {}".format(self.device))
+
             self.detection_graph = tf.Graph()
             with self.detection_graph.as_default():
                 od_graph_def = tf.GraphDef()
@@ -92,7 +103,7 @@ class Detector:
             # this works well in the real world, but requires
             # good computational resources
             with self.detection_graph.as_default():
-                with tf.device("/device:XLA_GPU:5"):
+                with tf.device(self.device):
                     (boxes, scores, classes, num) = self.sess.run(
                     [self.d_boxes,self.d_scores,self.d_classes,self.num_d],
                     feed_dict={self.image_tensor: image_np_expanded})
