@@ -106,8 +106,8 @@ class Navigator:
 
         self.cfg_srv = Server(NavigatorConfig, self.dyn_cfg_callback)
 
-        #rospy.Subscriber('/map_inflated', OccupancyGrid, self.map_callback)
-        rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
+        rospy.Subscriber('/map_inflated', OccupancyGrid, self.map_callback)
+        #rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
         rospy.Subscriber('/map_metadata', MapMetaData, self.map_md_callback)
         rospy.Subscriber('/cmd_nav', Pose2D, self.cmd_nav_callback)
         rospy.Subscriber('/should_stop', Bool, self.should_stop_callback)
