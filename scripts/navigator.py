@@ -249,10 +249,6 @@ class Navigator:
         cmd_vel.angular.z = om
         self.nav_vel_pub.publish(cmd_vel)
 
-    def publish_current_pose(self):
-        pose = Pose2D(self.x, self.y, self.theta)
-        self.robot_pose_current_pub.publish(pose)
-
 
     def get_current_plan_time(self):
         t = (rospy.get_rostime()-self.current_plan_start_time).to_sec()
@@ -381,7 +377,6 @@ class Navigator:
                     self.switch_mode(Mode.IDLE)
 
             self.publish_control()
-            self.publish_current_pose() # /robot/pose/current
             
             rate.sleep()
 

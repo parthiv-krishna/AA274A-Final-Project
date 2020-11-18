@@ -157,6 +157,22 @@ Visualization Manager:
         robot: true
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot/vis/frustum
+      Name: Marker
+      Namespaces:
+        robot: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot/vis/pose/current
+      Name: Marker
+      Namespaces:
+        robot: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -197,10 +213,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.425398052
+      Pitch: 0.455398023
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.85539794
+      Yaw: 1.09539771
     Saved: ~
 Window Geometry:
   Displays:
@@ -218,5 +234,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 65
+  X: 66
   Y: 24
