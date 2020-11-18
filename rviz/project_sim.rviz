@@ -157,6 +157,16 @@ Visualization Manager:
         robot: true
       Queue Size: 100
       Value: true
+    - Alpha: 0.699999988
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: false
+      Name: Map
+      Topic: /map_inflated
+      Unreliable: false
+      Use Timestamp: false
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -218,5 +228,10 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
+<<<<<<< HEAD
   X: 65
   Y: 24
+=======
+  X: 57
+  Y: 6
+>>>>>>> stop-sign

@@ -7,7 +7,7 @@ import rospkg
 from final_project.msg import DetectedObject
 from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
-from std_msgs.msg import Float32MultiArray, String
+from std_msgs.msg import Float32MultiArray, String, Bool
 import tf
 import Queue
 
@@ -31,7 +31,7 @@ class SupervisorParams:
         self.use_gazebo = rospy.get_param("sim")
 
         # How is nav_cmd being decided -- human manually setting it, or rviz
-        self.rviz = rospy.get_param("rviz")
+        self.rviz = rospy.get_param("/supervisor/rviz")
 
         # If using gmapping, we will have a map frame. Otherwise, it will be odom frame.
         self.mapping = rospy.get_param("map")
@@ -87,8 +87,11 @@ class Supervisor:
         self.pose_goal_publisher = rospy.Publisher('/cmd_pose', Pose2D, queue_size=10)
         self.nav_goal_publisher = rospy.Publisher('/cmd_nav', Pose2D, queue_size=10)
 
+
         # Command vel (used for idling)
         self.cmd_vel_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        
+        self.stop_publisher = rospy.Publisher('/should_stop', Bool, queue_size=10)
 
         self.debug_publisher = rospy.Publisher('/supervisor_debug', String, queue_size=10)
         ########## SUBSCRIBERS ##########
@@ -103,6 +106,9 @@ class Supervisor:
         if self.params.use_gazebo:
             rospy.Subscriber('/gazebo/model_states', ModelStates, self.gazebo_callback)
         self.trans_listener = tf.TransformListener()
+
+        rospy.Subscriber('/navigator/close_to', Bool, self.close_to_callback)
+        self.is_close_to = False
 
         # If using rviz, we can subscribe to nav goal click
         if self.params.rviz:
@@ -185,7 +191,10 @@ class Supervisor:
         # if close enough and in nav mode, stop
         if dist > 0 and dist < self.params.stop_min_dist and self.mode == Mode.NAV:
             self.init_stop_sign()
-
+            
+    def close_to_callback(self, msg):
+        self.is_close_to = msg.data
+        print("is_close_to", self.is_close_to)
 
     ########## STATE MACHINE ACTIONS ##########
 
@@ -221,10 +230,10 @@ class Supervisor:
 
     def close_to(self, x, y, theta):
         """ checks if the robot is at a pose within some threshold """
-
-        return abs(x - self.x) < self.params.pos_eps and \
-               abs(y - self.y) < self.params.pos_eps and \
-               abs(theta - self.theta) < self.params.theta_eps
+        return self.is_close_to
+        #return abs(x - self.x) < self.params.pos_eps and \
+        #       abs(y - self.y) < self.params.pos_eps and \
+        #       abs(theta - self.theta) < self.params.theta_eps
 
     def init_stop_sign(self):
         """ initiates a stop sign maneuver """
@@ -251,7 +260,6 @@ class Supervisor:
                rospy.get_rostime() - self.cross_start > rospy.Duration.from_sec(self.params.crossing_time)
 
     ########## Code ends here ##########
-
 
     ########## STATE MACHINE LOOP ##########
 
@@ -297,6 +305,9 @@ class Supervisor:
 
         elif self.mode == Mode.STOP:
             # At a stop sign
+            should_stop = Bool()
+            should_stop.data = True
+            self.stop_publisher.publish(should_stop)
             self.stay_idle()
             # If we've waited long enough
             if self.has_stopped():
@@ -304,6 +315,9 @@ class Supervisor:
 
         elif self.mode == Mode.CROSS:
             # Crossing an intersection
+            should_stop = Bool()
+            should_stop.data = False
+            self.stop_publisher.publish(should_stop)
             self.nav_to_pose()
             if self.has_crossed():
                 self.mode = Mode.NAV
