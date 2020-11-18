@@ -18,11 +18,8 @@ MARKER_NAMESPACE = "robot"
 class RobotMarkerId(IntEnum):
     CURRENT_POSE = 100 # Don't use zero as that's already used by the 2d nav goal.
     CURRENT_FOOTPRINT = 101
-    FRUSTUM_TOP_RIGHT = 102
-    FRUSTUM_TOP_LEFT = 103
-    FRUSTUM_BOTTOM_LEFT = 104
-    FRUSTUM_BOTTOMR_RIGHT = 105
-    FRUSTUM = 106
+    FRUSTUM = 102
+
 
 
 ## Markers
@@ -143,7 +140,7 @@ class Visualizer(object):
     """
 
     def __init__(self):
-        rospy.init_node('turtlebot_navigator', anonymous=True)
+        rospy.init_node('turtlebot_visualizer', anonymous=True)
 
         # State
         self.current_pose = None    # Pose of base frame
@@ -197,7 +194,7 @@ class Visualizer(object):
 
 
     def publish_frustum_marker(self):
-        marker = FrustumMarker(RobotMarkerId.FRUSTUM_TOP_RIGHT, self.camera_tf, self.theta)
+        marker = FrustumMarker(RobotMarkerId.FRUSTUM, self.camera_tf, self.theta)
         self.frustum_pub.publish(marker)
 
 
@@ -216,7 +213,7 @@ class Visualizer(object):
             if self.current_pose is not None:
                 self.publish_pose_marker()         # /robot/vis/pose/current
                 self.publish_footprint_marker()    # /robot/vis/footprint
-                self.publish_frustum_marker()
+                self.publish_frustum_marker()      # /robot/vis/frustum
 
             rate.sleep()
 
