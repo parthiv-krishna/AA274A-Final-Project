@@ -1312,7 +1312,7 @@
         <kinematic>0</kinematic>
         <gravity>1</gravity>
       </link>
-      <pose frame=''>3.2 0.6 0 0 -0 3.14159</pose>
+      <pose frame=''>2.6 0.5 0 0 -0 1.57</pose>
     </model>
     
     
