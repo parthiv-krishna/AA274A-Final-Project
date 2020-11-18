@@ -3,6 +3,7 @@
 from enum import Enum
 
 import rospy
+import rospkg
 from final_project.msg import DetectedObject
 from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
@@ -329,6 +330,8 @@ class Supervisor:
 
 if __name__ == '__main__':
     sup = Supervisor()
-    sup.explore_load_goals("/home/mason/catkin_ws/src/AA274A-Final-Project/scripts/points.txt")
+    rospack = rospkg.RosPack()
+    package_dir = rospack.get_path("final_project")
+    sup.explore_load_goals(package_dir + "/scripts/points.txt")
     sup.debug_publisher.publish("HERE I AM")
     sup.run()
