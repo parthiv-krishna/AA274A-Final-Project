@@ -18,6 +18,7 @@ class PoiLocator:
 
     POI_EXCLUSION_DIST = 0.5 # meters
     ZONE_EXCLUSION_DIST = 1.0 # meters
+    CONFIDENCE_THRESH = 0.825
 
     def __init__(self):
         rospy.init_node('poi_locator', anonymous=True)
@@ -106,7 +107,8 @@ class PoiLocator:
     def register_poi(self, detected_object):
         name = detected_object.name
         dist = detected_object.distance
-        if name in PoiLocator.POI_NAMES:
+        confidence = detected_object.confidence  # simple approach to avoid false positives
+        if confidence > self.CONFIDENCE_THRESH and name in PoiLocator.POI_NAMES:
             pos = self.localize_object(detected_object)
             if name not in self.pois:
                 self.pois[name] = []
@@ -127,7 +129,8 @@ class PoiLocator:
         obj = detected_object
         name = obj.name
         dist = detected_object.distance
-        if obj.distance < 0.5 and obj.name in PoiLocator.VENDOR_NAMES:
+        confidence = detected_object.confidence  # simple approach to avoid false positives
+        if confidence > self.CONFIDENCE_THRESH and obj.distance < 0.5 and obj.name in PoiLocator.VENDOR_NAMES:
             pos = self.current_pose.translation # x,y,z
             if name not in self.zones:
                 self.zones[name] = []
