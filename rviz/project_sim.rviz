@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /TF1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 554
   - Class: rviz/Selection
@@ -87,19 +88,19 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
         base_camera:
-          Value: true
+          Value: false
         base_footprint:
           Value: true
         base_link:
-          Value: true
+          Value: false
         base_scan:
-          Value: true
+          Value: false
         caster_back_link:
-          Value: true
+          Value: false
         imu_link:
-          Value: true
+          Value: false
         map:
           Value: true
         odom:
@@ -138,6 +139,30 @@ Visualization Manager:
       Shape: Arrow
       Topic: /move_base_simple/goal
       Unreliable: false
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot/vis/pose/current
+      Name: Marker
+      Namespaces:
+        robot: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot/vis/footprint
+      Name: Marker
+      Namespaces:
+        robot: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot/vis/frustum
+      Name: Marker
+      Namespaces:
+        robot: true
+      Queue Size: 100
       Value: true
     - Class: rviz/Marker
       Enabled: true
@@ -187,10 +212,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.525397956
+      Pitch: 0.455398023
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.675398111
+      Yaw: 1.09539771
     Saved: ~
 Window Geometry:
   Displays:
@@ -208,5 +233,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 65
+  X: 66
   Y: 24
