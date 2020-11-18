@@ -74,9 +74,9 @@ class Detector:
         self.object_labels = load_object_labels(PATH_TO_LABELS)
 
         self.tf_listener = TransformListener()
-        rospy.Subscriber('/raspicam_node/image_raw', Image, self.camera_callback, queue_size=1, buff_size=2**24)
-        rospy.Subscriber('/raspicam_node/image/compressed', CompressedImage, self.compressed_camera_callback, queue_size=1, buff_size=2**24)
-        rospy.Subscriber('/raspicam_node/camera_info', CameraInfo, self.camera_info_callback)
+        rospy.Subscriber('/camera/image_raw', Image, self.camera_callback, queue_size=1, buff_size=2**24)
+        rospy.Subscriber('/camera/image/compressed', CompressedImage, self.compressed_camera_callback, queue_size=1, buff_size=2**24)
+        rospy.Subscriber('/camera/camera_info', CameraInfo, self.camera_info_callback)
         rospy.Subscriber('/scan', LaserScan, self.laser_callback)
 
     def run_detection(self, img):
@@ -174,36 +174,36 @@ class Detector:
                 num_m += 1
         if num_m>0:
             dist /= num_m
-
         return dist
+
 
     def camera_callback(self, msg):
         """ callback for camera images """
 
         # save the corresponding laser scan
         img_laser_ranges = list(self.laser_ranges)
-
         try:
             img = self.bridge.imgmsg_to_cv2(msg, "passthrough")
             img_bgr8 = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
             print(e)
-
         self.camera_common(img_laser_ranges, img, img_bgr8)
+        # Show camera
+        cv2.imshow("Camera", img_bgr8)
+        cv2.waitKey(1)
+
 
     def compressed_camera_callback(self, msg):
         """ callback for camera images """
 
         # save the corresponding laser scan
         img_laser_ranges = list(self.laser_ranges)
-
         try:
             img = self.bridge.compressed_imgmsg_to_cv2(msg, "passthrough")
             img_bgr8 = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
             print(e)
 
-        self.camera_common(img_laser_ranges, img, img_bgr8)
 
     def camera_common(self, img_laser_ranges, img, img_bgr8):
         (img_h,img_w,img_c) = img.shape
@@ -227,10 +227,10 @@ class Detector:
                 cv2.rectangle(img_bgr8, (xmin,ymin), (xmax,ymax), (255,0,0), 2)
 
                 # computes the vectors in camera frame corresponding to each sides of the box
-                rayleft = self.project_pixel_to_ray(xmin,ycen)
-                rayright = self.project_pixel_to_ray(xmax,ycen)
+                rayleft = self.project_pixel_to_ray(xmin,xcen)
+                rayright = self.project_pixel_to_ray(xmax,xcen)
 
-                # convert the rays to angles (with 0 poiting forward for the robot)
+                # convert the rays to angles (with 0 pointing forward for the robot)
                 thetaleft = math.atan2(-rayleft[0],rayleft[2])
                 thetaright = math.atan2(-rayright[0],rayright[2])
                 if thetaleft<0:
@@ -265,7 +265,7 @@ class Detector:
         # displays the camera image
         #cv2.imshow("Camera", img_bgr8)
         #cv2.waitKey(1)
-
+        
     def camera_info_callback(self, msg):
         """ extracts relevant camera intrinsic parameters from the camera_info message.
         cx, cy are the center of the image in pixel (the principal point), fx and fy are

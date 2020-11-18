@@ -13,7 +13,7 @@
 
   <rosparam param="sim">false</rosparam>
   <rosparam param="map">true</rosparam>
-  <rosparam param="use_tf">false</rosparam>
+  <rosparam param="use_tf">true</rosparam>
   
   
   <!-- runs first so that it randomizes before gazebo is launched -->
@@ -86,9 +86,10 @@
   </node>
 
   <node pkg="final_project" type="goal_commander.py" name="goal_commander" />
-  <node pkg="final_project" type="detector.py" name="turtlebot_detector" />
-  <node pkg="final_project" type="navigator.py" name="navigator" />
-  <node pkg="final_project" type="visualizer.py" name="visualizer" />
+  <!-- <node pkg="final_project" type="detector.py" name="detector" /> -->
+  <node pkg="final_project" type="detector_mobilenet.py" name="detector" />
+  <!-- <node pkg="final_project" type="navigator.py" name="navigator" /> -->
+  <!-- <node pkg="final_project" type="visualizer.py" name="visualizer" /> -->
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find final_project)/rviz/project_sim.rviz"/>
 </launch>

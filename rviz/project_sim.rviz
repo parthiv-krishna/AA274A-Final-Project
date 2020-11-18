@@ -172,6 +172,22 @@ Visualization Manager:
         robot: true
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot/vis/bboxes
+      Name: Marker
+      Namespaces:
+        robot: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot/vis/bbox_text
+      Name: Marker
+      Namespaces:
+        robot: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -197,25 +213,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.99433708
+      Distance: 5.62931776
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.47354043
-        Y: -1.10334086
-        Z: -0.793820381
+        X: 2.92946601
+        Y: 0.115523927
+        Z: -0.0917241201
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.455398023
+      Pitch: 0.604798615
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.09539771
+      Yaw: 1.2554127
     Saved: ~
 Window Geometry:
   Displays:
@@ -233,5 +249,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 66
-  Y: 24
+  X: 624
+  Y: 66
