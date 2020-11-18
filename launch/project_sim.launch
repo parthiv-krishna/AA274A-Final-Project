@@ -97,4 +97,6 @@
   <node pkg="final_project" type="visualizer.py" name="visualizer" />
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find final_project)/rviz/project_sim.rviz"/>
+
+  <node pkg="final_project" type="explore_control.py" name="explore_control" />
 </launch>
