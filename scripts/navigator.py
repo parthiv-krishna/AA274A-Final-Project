@@ -4,7 +4,7 @@ import rospy
 import rospkg
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
 from geometry_msgs.msg import Twist, Pose2D, PoseStamped
-from std_msgs.msg import String
+from std_msgs.msg import String, Int16
 import tf
 import numpy as np
 from numpy import linalg
@@ -26,7 +26,7 @@ class Mode(Enum):
     TRACK = 2
     PARK = 3
     
-SAVE_POINTS = True
+SAVE_POINTS = False
 
 class Navigator:
     """
@@ -109,12 +109,12 @@ class Navigator:
         self.nav_smoothed_path_pub = rospy.Publisher('/cmd_smoothed_path', Path, queue_size=10)
         self.nav_smoothed_path_rej_pub = rospy.Publisher('/cmd_smoothed_path_rejected', Path, queue_size=10)
         self.nav_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-
+        self.nav_mode_pub = rospy.Publisher('/nav_mode', Int16, queue_size=10)
         self.trans_listener = tf.TransformListener()
 
         self.cfg_srv = Server(NavigatorConfig, self.dyn_cfg_callback)
 
-        rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
+        rospy.Subscriber('/map_inflated', OccupancyGrid, self.map_callback)
         rospy.Subscriber('/map_metadata', MapMetaData, self.map_md_callback)
         rospy.Subscriber('/cmd_nav', Pose2D, self.cmd_nav_callback)
 
@@ -207,6 +207,7 @@ class Navigator:
 
     def switch_mode(self, new_mode):
         rospy.loginfo("Switching from %s -> %s", self.mode, new_mode)
+        self.nav_mode_pub.publish(int(new_mode.value))
         self.mode = new_mode
 
     def publish_planned_path(self, path, publisher):
