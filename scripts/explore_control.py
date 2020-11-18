@@ -19,8 +19,10 @@ class Mode(Enum):
     PARK = 3
     NAV = 4
 
-
 class Explorer:
+
+    STOP_TIME = 5.0
+
     def __init__(self):
         rospy.init_node('explore_node', anonymous=True)
         self.explore_queue = Queue.Queue()
@@ -34,8 +36,8 @@ class Explorer:
 
         self.nav_goal_publisher = rospy.Publisher("/cmd_nav", Pose2D, queue_size=1)
 
-        self.trans_listener = tf.TransformListener()
-
+        self.trans_listener = tf.TransformListener()     
+        
         rospy.Subscriber("/nav_mode", Int16, self.nav_mode_callback)
         time.sleep(1) #Break time for the publisher to allow subsciber to contact/Establish connection
 
@@ -55,6 +57,8 @@ class Explorer:
             #print("Loaded: {0}".format(str(point_tuple)))
             self.explore_queue.put(point_tuple)
             line = fileObj.readline()
+        self.next_point = self.explore_queue.get()
+        self.last_point = (self.x, self.y, self.theta) # starting location
     
     def send_nav_command(self, point_tuple):
         nav_g_msg = Pose2D()
@@ -85,9 +89,18 @@ class Explorer:
                 pass
 
             if self.mode == Mode.IDLE or self.mode == Mode.PARK:
-                next_point = self.explore_queue.get()
-                self.send_nav_command(next_point)
-                self.mode = Mode.NAV
+                
+                if (self.x - self.next_point[0])**2 + (self.y - self.next_point[1])**2 < 0.25:
+                    # reached point
+                    self.last_point = self.next_point
+                    self.next_point = self.explore_queue.get()
+                    rospy.loginfo("Explorer reached waypoint, stopping for " + str(self.STOP_TIME) + " seconds")
+                    rospy.sleep(self.STOP_TIME)
+                self.send_nav_command(self.next_point)
+                if (self.x - self.last_point[0])**2 + (self.y - self.last_point[1])**2 > 0.25:
+                    # left last point
+                    self.mode = Mode.NAV
+                    rospy.loginfo("Left last point, entering NAV mode")  
             
             else:
                 print ("Position [x, y, theta]: {0}, {1}, {2}".format(self.x, self.y, self.theta))
