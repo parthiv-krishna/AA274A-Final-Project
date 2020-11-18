@@ -100,7 +100,8 @@ class Navigator:
         self.nav_smoothed_path_pub = rospy.Publisher('/cmd_smoothed_path', Path, queue_size=10)
         self.nav_smoothed_path_rej_pub = rospy.Publisher('/cmd_smoothed_path_rejected', Path, queue_size=10)
         self.nav_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-        self.nav_mode_pub = rospy.Publisher('/nav_mode', Int16, queue_size=10)
+        # Publish robot's perception of own state
+        self.robot_pose_current_pub = rospy.Publisher('/robot/pose/current', Pose2D, queue_size=10)
 
         self.trans_listener = tf.TransformListener()
 
@@ -250,6 +251,11 @@ class Navigator:
         cmd_vel.angular.z = om
         self.nav_vel_pub.publish(cmd_vel)
 
+    def publish_current_pose(self):
+        pose = Pose2D(self.x, self.y, self.theta)
+        self.robot_pose_current_pub.publish(pose)
+
+
     def get_current_plan_time(self):
         t = (rospy.get_rostime()-self.current_plan_start_time).to_sec()
         return max(0.0, t)  # clip negative time to 0
@@ -377,6 +383,8 @@ class Navigator:
                     self.switch_mode(Mode.IDLE)
 
             self.publish_control()
+            self.publish_current_pose() # /robot/pose/current
+            
             rate.sleep()
 
 if __name__ == '__main__':    
