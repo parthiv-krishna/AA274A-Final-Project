@@ -56,7 +56,7 @@
     <param name="linearUpdate" value="0.2"/>
     <param name="angularUpdate" value="0.2"/>
     <param name="temporalUpdate" value="0.5"/>
-    <param name="delta" value="0.05"/>
+    <param name="delta" value="0.02"/>
     <param name="lskip" value="0"/>
     <param name="particles" value="120"/>
     <param name="sigma" value="0.05"/>
@@ -80,7 +80,9 @@
     <param name="lasamplerange" value="0.005"/>
     <param name="lasamplestep" value="0.005"/>
   </node>
-
+  
+  
+  <node pkg="final_project" type="map_inflator.py" name="map_inflator" />
   <node pkg="final_project" type="goal_commander.py" name="goal_commander" />
   <node pkg="final_project" type="detector.py" name="turtlebot_detector" />
   <node pkg="final_project" type="navigator.py" name="navigator" />
