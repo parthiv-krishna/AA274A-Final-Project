@@ -32,8 +32,8 @@ class Navigator:
     """
     def __init__(self):
         rospy.init_node('turtlebot_navigator', anonymous=True)
-        #with open("points.txt","w") as f:
-        #    f.write("x, y, theta\n")
+        with open("points.txt","w") as f:
+            f.write("x, y, theta\n")
         self.mode = Mode.IDLE
 
         # current state
@@ -67,8 +67,8 @@ class Navigator:
         self.plan_start = [0.,0.]
         
         # Robot limits
-        self.v_max = 0.2    # maximum velocity
-        self.om_max = 0.4   # maximum angular velocity
+        self.v_max = 0.75    # maximum velocity
+        self.om_max = 0.75   # maximum angular velocity
 
         self.v_des = 0.12   # desired cruising velocity
         self.theta_start_thresh = 0.05   # threshold in theta to start moving forward when path-following
@@ -100,6 +100,7 @@ class Navigator:
         self.nav_smoothed_path_pub = rospy.Publisher('/cmd_smoothed_path', Path, queue_size=10)
         self.nav_smoothed_path_rej_pub = rospy.Publisher('/cmd_smoothed_path_rejected', Path, queue_size=10)
         self.nav_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.nav_mode_pub = rospy.Publisher('/nav_mode', Int16, queue_size=10)
         # Publish robot's perception of own state
         self.robot_pose_current_pub = rospy.Publisher('/robot/pose/current', Pose2D, queue_size=10)
 
@@ -125,9 +126,9 @@ class Navigator:
         loads in goal if different from current goal, and replans
         """
         if data.x != self.x_g or data.y != self.y_g or data.theta != self.theta_g:
-            #with open("points.txt","a+") as f:
-            #    line = str(data.x) + ", " + str(data.y) + ", " + str(data.theta)
-            #    f.write(line + "\n")
+            with open("points.txt","a+") as f:
+                line = str(data.x) + ", " + str(data.y) + ", " + str(data.theta)
+                f.write(line + "\n")
             self.x_g = data.x
             self.y_g = data.y
             self.theta_g = data.theta
@@ -285,7 +286,7 @@ class Navigator:
         x_goal = self.snap_to_grid((self.x_g, self.y_g))
         problem = AStar(state_min,state_max,x_init,x_goal,self.occupancy,self.plan_resolution)
 
-        rospy.loginfo("Navigator: computing navigation plan")
+        rospy.loginfo("Navigator: computing navigation plan to goal: [{0}, {1}]".format(self.x_g, self.y_g))
         success =  problem.solve()
         if not success:
             rospy.loginfo("Planning failed")

@@ -21,7 +21,7 @@
   <rosparam file="$(find final_project)/cfg/gripper_control.yaml" command="load"/>
 
 
-  <node pkg="final_project" type="goal_commander.py" name="goal_commander" />
+  <!--node pkg="final_project" type="goal_commander.py" name="goal_commander" /-->
   <node pkg="final_project" type="navigator.py" name="navigator" />
-  <!-- node pkg="final_project" type="supervisor.py" name="supervisor" / -->
+  <node pkg="final_project" type="supervisor.py" name="supervisor" />
 </launch>

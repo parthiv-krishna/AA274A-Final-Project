@@ -258,7 +258,6 @@ class Supervisor:
         """ the main loop of the robot. At each iteration, depending on its
         mode (i.e. the finite state machine's state), if takes appropriate
         actions. This function shouldn't return anything """
-        print("##########################################################################################")
         if not self.params.use_gazebo:
             try:
                 origin_frame = "/map" if self.params.mapping else "/odom"
@@ -276,7 +275,7 @@ class Supervisor:
         ########## Code starts here ##########
         if self.mode == Mode.IDLE:
             # Send zero velocity
-            if self.explore == True and self.explore_queue.empty() == False:
+            '''if self.explore == True and self.explore_queue.empty() == False:
                 goal_tuple = self.explore_queue.get()
                 self.x_g = goal_tuple[0]
                 self.y_g = goal_tuple[1]
@@ -285,7 +284,8 @@ class Supervisor:
                 self.debug_publisher.publish("Pulled Goal: {0}".format(str(goal_tuple)))
                 self.mode = Mode.NAV
             else:
-                self.stay_idle()
+                self.stay_idle()'''
+            self.stay_idle()
 
         elif self.mode == Mode.POSE:
             # Moving towards a desired pose

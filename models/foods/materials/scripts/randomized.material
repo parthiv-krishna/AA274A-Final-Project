@@ -7,7 +7,7 @@ material food1/Diffuse
         {
             texture_unit
             {
-                texture broccoli.png
+                texture apple.png
             }
         }
     }
@@ -22,7 +22,7 @@ material food2/Diffuse
         {
             texture_unit
             {
-                texture apple.png
+                texture broccoli.png
             }
         }
     }
@@ -37,7 +37,7 @@ material food3/Diffuse
         {
             texture_unit
             {
-                texture apple.png
+                texture banana.png
             }
         }
     }
