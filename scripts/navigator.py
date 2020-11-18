@@ -4,7 +4,6 @@ import rospy
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
 from geometry_msgs.msg import Twist, Pose2D, PoseStamped
 from std_msgs.msg import String, Int16, Bool
->>>>>>> stop-sign
 import tf
 import numpy as np
 from numpy import linalg

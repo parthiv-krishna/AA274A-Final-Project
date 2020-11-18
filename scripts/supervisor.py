@@ -175,6 +175,8 @@ class Supervisor:
         if self.explore:
             self.debug_publisher.publish("Ignoring nav goals in exploration state")
             return
+            
+        print("received nav pose")
         
         self.x_g = msg.x
         self.y_g = msg.y
@@ -224,9 +226,11 @@ class Supervisor:
 
     def stay_idle(self):
         """ sends zero velocity to stay put """
-
-        vel_g_msg = Twist()
-        self.cmd_vel_publisher.publish(vel_g_msg)
+        stop = Bool()
+        stop.data = True
+        self.stop_publisher.publish(stop)
+        #vel_g_msg = Twist()
+        #self.cmd_vel_publisher.publish(vel_g_msg)
 
     def close_to(self, x, y, theta):
         """ checks if the robot is at a pose within some threshold """

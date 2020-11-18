@@ -45,6 +45,7 @@ class GoalPoseCommander:
     def publish_goal_pose(self):
         """ sends the current desired pose to the navigator """
         if self.x_g is not None:
+            rospy.loginfo("I was called upon")
             pose_g_msg = Pose2D()
             pose_g_msg.x = self.x_g
             pose_g_msg.y = self.y_g
