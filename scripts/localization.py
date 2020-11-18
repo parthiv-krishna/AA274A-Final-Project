@@ -16,7 +16,7 @@ class LocalizationParams:
 
     def __init__(self, verbose=False):
         self.mc = rospy.get_param("~mc", False)
-        self.num_particles = rospy.get_param("~num_particles", 100)
+        self.num_particles = rospy.get_param("~num_particles", 200)
         if verbose:
             print(self)
 
