@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import rospkg
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
 from geometry_msgs.msg import Twist, Pose2D, PoseStamped
 from std_msgs.msg import String
@@ -24,16 +25,24 @@ class Mode(Enum):
     ALIGN = 1
     TRACK = 2
     PARK = 3
+    
+SAVE_POINTS = True
 
 class Navigator:
     """
     This node handles point to point turtlebot motion, avoiding obstacles.
     It is the sole node that should publish to cmd_vel
     """
+    
     def __init__(self):
+    
+        rospack = rospkg.RosPack()
+        package_dir = rospack.get_path("final_project")
+        self.points_path = package_dir + "/scripts/points.txt"
         rospy.init_node('turtlebot_navigator', anonymous=True)
-        #with open("points.txt","w") as f:
-        #    f.write("x, y, theta\n")
+        if SAVE_POINTS:
+            with open(self.points_path, "w") as f:
+                f.write("x, y, theta\n")
         self.mode = Mode.IDLE
 
         # current state
@@ -123,9 +132,10 @@ class Navigator:
         loads in goal if different from current goal, and replans
         """
         if data.x != self.x_g or data.y != self.y_g or data.theta != self.theta_g:
-            #with open("points.txt","a+") as f:
-            #    line = str(data.x) + ", " + str(data.y) + ", " + str(data.theta)
-            #    f.write(line + "\n")
+            if SAVE_POINTS:
+                with open(self.points_path,"a+") as f:
+                    line = str(data.x) + ", " + str(data.y) + ", " + str(data.theta)
+                    f.write(line + "\n")
             self.x_g = data.x
             self.y_g = data.y
             self.theta_g = data.theta
