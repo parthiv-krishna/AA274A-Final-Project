@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import numpy as np
 from nav_msgs.msg import OccupancyGrid, MapMetaData
 from scipy.ndimage.morphology import grey_dilation
 
@@ -10,7 +11,6 @@ class MapInflator:
     pub = None
 
     def __init__(self):
-        s
         rospy.init_node('map_inflator', anonymous=True)
 
         rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
@@ -20,7 +20,12 @@ class MapInflator:
         """
         receives new map info and inflates the map
         """
-        new_map = grey_dilation(msg.data, size=(3,3))
+        old_map = np.array(msg.data)
+        old_map = old_map.reshape((384, 384))
+        print(old_map)
+        new_map = grey_dilation(old_map, size=(3,3))
+        new_map = new_map.reshape(384**2).tolist()
+        print(len(new_map))
         new_msg = OccupancyGrid()
         new_msg.data = new_map
         new_msg.info = msg.info
