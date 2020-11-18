@@ -51,7 +51,7 @@ class Detector:
         if USE_TF:
             devices = [x.name for x in device_lib.list_local_devices() if x.device_type=='XLA_GPU']
             if '/device:XLA_GPU:5' in devices:
-                self.device = '/device:XLA_GPU:5' # Target device in Genbu env
+                self.device = '/device:XLA_GPU:4' # Target device in Genbu env
             elif '/device:XLA_GPU:0':
                 self.device = '/device:XLA_GPU:0' # Target device in Li's env
             else:
