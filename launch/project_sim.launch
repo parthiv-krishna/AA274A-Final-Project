@@ -84,7 +84,7 @@
   
   <node pkg="final_project" type="map_inflator.py" name="map_inflator" />
   <node pkg="final_project" type="goal_commander.py" name="goal_commander" />
-  <node pkg="final_project" type="detector.py" name="turtlebot_detector" />
+<!--  <node pkg="final_project" type="detector_mobilenet.py" name="turtlebot_detector" /> -->
   <node pkg="final_project" type="navigator.py" name="navigator" />
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find final_project)/rviz/project_sim.rviz"/>

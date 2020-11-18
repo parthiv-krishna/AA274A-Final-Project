@@ -22,6 +22,8 @@ USE_TF = True
 # minimum score for positive detection
 MIN_SCORE = .5
 
+
+
 def load_object_labels(filename):
     """ loads the coco object readable name """
 
@@ -74,9 +76,9 @@ class Detector:
         self.object_labels = load_object_labels(PATH_TO_LABELS)
 
         self.tf_listener = TransformListener()
-        rospy.Subscriber('/raspicam_node/image_raw', Image, self.camera_callback, queue_size=1, buff_size=2**24)
-        rospy.Subscriber('/raspicam_node/image/compressed', CompressedImage, self.compressed_camera_callback, queue_size=1, buff_size=2**24)
-        rospy.Subscriber('/raspicam_node/camera_info', CameraInfo, self.camera_info_callback)
+        rospy.Subscriber('/camera/image_raw', Image, self.camera_callback, queue_size=1, buff_size=2**24)
+        rospy.Subscriber('/camera/image/compressed', CompressedImage, self.compressed_camera_callback, queue_size=1, buff_size=2**24)
+        rospy.Subscriber('/camera/camera_info', CameraInfo, self.camera_info_callback)
         rospy.Subscriber('/scan', LaserScan, self.laser_callback)
 
     def run_detection(self, img):
@@ -90,9 +92,10 @@ class Detector:
             # this works well in the real world, but requires
             # good computational resources
             with self.detection_graph.as_default():
-                (boxes, scores, classes, num) = self.sess.run(
-                [self.d_boxes,self.d_scores,self.d_classes,self.num_d],
-                feed_dict={self.image_tensor: image_np_expanded})
+                with tf.device("/device:XLA_GPU:5"):
+                    (boxes, scores, classes, num) = self.sess.run(
+                    [self.d_boxes,self.d_scores,self.d_classes,self.num_d],
+                    feed_dict={self.image_tensor: image_np_expanded})
 
             return self.filter(boxes[0], scores[0], classes[0], num[0])
 
@@ -263,8 +266,8 @@ class Detector:
             self.detected_objects_pub.publish(detected_objects)
 
         # displays the camera image
-        #cv2.imshow("Camera", img_bgr8)
-        #cv2.waitKey(1)
+        cv2.imshow("Camera", img_bgr8)
+        cv2.waitKey(1)
 
     def camera_info_callback(self, msg):
         """ extracts relevant camera intrinsic parameters from the camera_info message.
