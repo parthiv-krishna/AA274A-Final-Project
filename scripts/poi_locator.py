@@ -3,7 +3,7 @@
 import rospy
 import tf
 from final_project.msg import (DetectedObject, DetectedObjectList,
-                                PointOfInterest, PointOfInterestList, Vendor, VendorList)
+                                PointOfInterest, PointOfInterestList)
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Quaternion, Twist, Transform, TransformStamped, Vector3
 from tf.transformations import euler_from_quaternion
@@ -17,6 +17,7 @@ class PoiLocator:
     VENDOR_NAMES = set(["broccoli", "banana", "apple"])
 
     POI_EXCLUSION_DIST = 0.5 # meters
+    ZONE_ACQUIRE_DIST = 1.0 # meters
     ZONE_EXCLUSION_DIST = 1.0 # meters
     CONFIDENCE_THRESH = 0.825
 
@@ -34,14 +35,14 @@ class PoiLocator:
         self.zones = {}     # Zones associated with points of interest, e.g. vendor pickup spot.
 
         self.tf_listener = tf.TransformListener()
-        self.camera_tf = None       # Transform from base_frame to base_camera
+        self.camera_tf = None       # Transform from /odom to /base_camera
 
         # Subscribers
         rospy.Subscriber('/detector/objects', DetectedObjectList, self.detection_callback)
 
         # Publishers
-        self.poi_pub = rospy.Publisher('/robot/poi', PointOfInterestList, queue_size=10)
-        self.zone_pub     = rospy.Publisher('/robot/zones', PointOfInterestList, queue_size=10)
+        self.poi_pub  = rospy.Publisher('/robot/poi', PointOfInterestList, queue_size=10)
+        self.zone_pub = rospy.Publisher('/robot/zones', PointOfInterestList, queue_size=10)
 
 
     def get_current_pose(self):
@@ -72,6 +73,10 @@ class PoiLocator:
         """Returns center coord of detected object in terms of /odom frame."""
         FOV = 1.3962634
         alpha = FOV/2.0
+        HPIX = 300 # num of pixels across
+        VPIX = HPIX
+        apix = HPIX/2.0 # num of pixels in part of screen subtended by alpha
+                        # Cam is 300 pixels across. so 150 on each half.
         theta = self.theta
         distance = detected_object.distance
         corners = detected_object.corners
@@ -87,11 +92,11 @@ class PoiLocator:
         xcen, ycen = (xmax+xmin)/2, (ymax+ymin)/2
         d = distance
 
-        a_cen = alpha / 150.0 * (150.0-xcen)
-        # a_left = alpha / 150.0 * (150.0-xmin)
-        # a_right = alpha / 150.0 * (150.0-xmax)
-        a_top = alpha / 150.0 * (150.0-ymin)
-        a_bottom = alpha / 150.0 * (150.0-ymax)
+        a_cen = alpha / apix * (apix-xcen)
+        # a_left = alpha / apix * (apix-xmin)
+        # a_right = alpha / apix * (apix-xmax)
+        a_top = alpha / apix * (apix-ymin)
+        a_bottom = alpha / apix * (apix-ymax)
 
         pt_cen = Vector3(x_cam + d*np.cos(theta+a_cen), y_cam + d*np.sin(theta+a_cen), z_cam + d*np.sin((a_top+a_bottom)/2))
         return pt_cen
@@ -126,11 +131,12 @@ class PoiLocator:
         
 
     def register_zone(self, detected_object):
-        obj = detected_object
-        name = obj.name
+        name = detected_object.name
         dist = detected_object.distance
         confidence = detected_object.confidence  # simple approach to avoid false positives
-        if confidence > self.CONFIDENCE_THRESH and obj.distance < 1 and obj.name in PoiLocator.VENDOR_NAMES:
+
+        if (confidence > self.CONFIDENCE_THRESH and detected_object.distance < PoiLocator.ZONE_ACQUIRE_DIST and
+                    detected_object.name in PoiLocator.VENDOR_NAMES):
             pos = self.current_pose.translation # x,y,z
             if name not in self.zones:
                 self.zones[name] = []
@@ -138,7 +144,7 @@ class PoiLocator:
             for idx in range(len(self.zones[name])): # O(n) naive comparison
                 ref_pos, ref_dist = self.zones[name][idx]
                 is_new_spot = (is_new_spot and
-                                self.euclidean_distance(pos, ref_pos) > PoiLocator.POI_EXCLUSION_DIST)
+                                self.euclidean_distance(pos, ref_pos) > PoiLocator.ZONE_EXCLUSION_DIST)
                 if not is_new_spot:
                     if dist < ref_dist:
                         self.zones[name][idx] = (pos, dist)

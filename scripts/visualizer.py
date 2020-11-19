@@ -23,17 +23,29 @@ class RobotMarkerId(IntEnum):
     FRUSTUM = 102
     BBOX = 103
     POI = 104
-    ZONES = 105
+    POI_DROPLINE = 105
 
     # IDs 200-299 reserved for bounding box text markers
     BBOX_TEXT_START = 200
+
+    # IDs 300-399 reserved for zone markers
+    ZONE_START = 300
+
+
+COLOR_DICT = {
+    'stop_sign': ColorRGBA(0.3, 0.3, 0.3, 1.0),
+    'apple'    : ColorRGBA(0.8, 0.2, 0.2, 1.0),
+    'banana'   : ColorRGBA(0.9, 0.9, 0.1, 1.0),
+    'broccoli' : ColorRGBA(0.3, 0.6, 0.3, 1.0),
+    'unknown'  : ColorRGBA(1.0, 1.0, 1.0, 1.0)
+}
 
 
 ## Markers
 class PoseArrowMarker(Marker):
     def __init__(self, marker_id, transform):
         super(PoseArrowMarker, self).__init__()
-        self.header.frame_id = "map" # Following https://github.com/StanfordASL/AA274_SECTION/blob/master/s4/code/self_pub.py
+        self.header.frame_id = "odom" # Following https://github.com/StanfordASL/AA274_SECTION/blob/master/s4/code/self_pub.py
         self.header.stamp = rospy.Time()
         self.ns = MARKER_NAMESPACE
         self.id = marker_id
@@ -53,7 +65,7 @@ class PoseArrowMarker(Marker):
 class FootprintMarker(Marker):
     def __init__(self, marker_id, transform):
         super(FootprintMarker, self).__init__()
-        self.header.frame_id = "map"
+        self.header.frame_id = "odom"
         self.header.stamp = rospy.Time()
         self.ns = MARKER_NAMESPACE
         self.id = marker_id
@@ -79,7 +91,7 @@ class FrustumMarker(Marker):
         FOV = 1.3962634
         alpha = FOV/2.0
 
-        self.header.frame_id = "map"
+        self.header.frame_id = "odom"
         self.header.stamp = rospy.Time()
         self.ns = MARKER_NAMESPACE
         self.id = marker_id
@@ -136,6 +148,10 @@ class BboxMarker(Marker):
 
         FOV = 1.3962634
         alpha = FOV/2.0
+        HPIX = 300 # num of pixels across
+        VPIX = HPIX
+        apix = HPIX/2.0 # num of pixels in part of screen subtended by alpha
+                        # Cam is 300 pixels across. so 150 on each half.
 
         self.header.frame_id = "map"
         self.header.stamp = rospy.Time()
@@ -174,13 +190,11 @@ class BboxMarker(Marker):
 
                 # print("{} {}".format(xcen, ycen))
 
-                # Cam is 300 pixels across. so 150 on each half.
-                # beta  = alpha / 150.0 * (150.0 - ycen)
-                a_cen = alpha / 150.0 * (150.0-xcen)  # Angle diff between theta and xcen
-                a_left = alpha / 150.0 * (150.0-xmin)
-                a_right = alpha / 150.0 * (150.0-xmax)
-                a_top = alpha / 150.0 * (150.0-ymin)
-                a_bottom = alpha / 150.0 * (150.0-ymax)
+                a_cen = alpha / apix * (apix-xcen)  # Angle diff between theta and xcen
+                a_left = alpha / apix * (apix-xmin)
+                a_right = alpha / apix * (apix-xmax)
+                a_top = alpha / apix * (apix-ymin)
+                a_bottom = alpha / apix * (apix-ymax)
 
                 """
                 pt_left = Point(x_cam + d*np.cos(theta+a_left), y_cam + d*np.sin(theta+a_left), z_cam + d*np.sin((a_top+a_bottom)/2))
@@ -209,6 +223,10 @@ class BboxTextMarker(Marker):
 
         FOV = 1.3962634
         alpha = FOV/2.0
+        HPIX = 300 # num of pixels across
+        VPIX = HPIX
+        apix = HPIX/2.0 # num of pixels in part of screen subtended by alpha
+                        # Cam is 300 pixels across. so 150 on each half.
 
         self.header.frame_id = "map"
         self.header.stamp = rospy.Time()
@@ -243,11 +261,11 @@ class BboxTextMarker(Marker):
             xcen, ycen = (xmax+xmin)/2, (ymax+ymin)/2
             d = distance
 
-            a_cen = alpha / 150.0 * (150.0-xcen)  # Angle diff between theta and xcen
-            # a_left = alpha / 150.0 * (150.0-xmin)
-            # a_right = alpha / 150.0 * (150.0-xmax)
-            a_top = alpha / 150.0 * (150.0-ymin)
-            # a_bottom = alpha / 150.0 * (150.0-ymax)
+            a_cen = alpha / apix * (apix-xcen)  # Angle diff between theta and xcen
+            # a_left = alpha / apix * (apix-xmin)
+            # a_right = alpha / apix * (apix-xmax)
+            a_top = alpha / apix * (apix-ymin)
+            # a_bottom = alpha / apix * (apix-ymax)
 
             # print("{} {}".format(xcen, ycen))
             """
@@ -260,7 +278,7 @@ class BboxTextMarker(Marker):
             self.pose.position.x = x_cam + d*np.cos(theta+a_cen)
             self.pose.position.y = y_cam + d*np.sin(theta+a_cen)
             self.pose.position.z = z_cam + d*np.sin(a_top+0.05)
-            self.text = detection.name
+            self.text = "{}\n{:.2f}".format(detection.name, detection.confidence)
 
 
 class PoiMarker(Marker):
@@ -275,7 +293,6 @@ class PoiMarker(Marker):
 
         self.scale.x = 0.07
         self.scale.y = 0.07
-        self.scale.z = 0.0
 
         for poi in poilist.pois:
             pos = poi.position
@@ -283,49 +300,64 @@ class PoiMarker(Marker):
             point = Point(pos.x, pos.y, pos.z)
 
             self.points.append(point)
-            if name == 'stop_sign':
-                color = ColorRGBA(0.3, 0.3, 0.3, 1.0)
-            elif name == 'apple':
-                color = ColorRGBA(1.0, 0.2, 0.2, 1.0)
-            elif name == 'banana':
-                color = ColorRGBA(1.0, 1.0, 0.0, 1.0)
-            elif name == 'broccoli':
-                color = ColorRGBA(0.3, 0.8, 0.3, 1.0)
-            else: # Unknown
-                color = ColorRGBA(1.0, 1.0, 1.0, 1.0)
+            if name not in COLOR_DICT:
+                color = COLOR_DICT['unknown']
+            else:
+                color = COLOR_DICT[name]
             self.colors.append(color)
 
 
+class PoiDroplineMarker(Marker):
+    def __init__(self, marker_id, poilist):
+        super(PoiDroplineMarker, self).__init__()
+        self.header.frame_id = "map"
+        self.header.stamp = rospy.Time()
+        self.ns = MARKER_NAMESPACE
+        self.id = marker_id
+        self.type = self.LINE_LIST
+        self.action = 0
+
+        self.scale.x = 0.002
+        self.scale.y = 0.01
+        self.scale.z = 0.01
+        self.color.a = 1.0
+        self.color.r = 0.3
+        self.color.g = 0.3
+        self.color.b = 0.3
+
+        for poi in poilist.pois:
+            pos = poi.position
+            p1 = Point(pos.x, pos.y, pos.z)
+            p2 = Point(pos.x, pos.y, 0.0)
+            self.points.append(p1)
+            self.points.append(p2)
+
 
 class ZoneMarker(Marker):
-    def __init__(self, marker_id, poilist):
+    def __init__(self, marker_id, poi):
         super(ZoneMarker, self).__init__()
         self.header.frame_id = "map"
         self.header.stamp = rospy.Time()
         self.ns = MARKER_NAMESPACE
         self.id = marker_id
-        self.type = self.SPHERE_LIST
-        self.action = 0
+        self.type = self.CYLINDER
 
-        self.scale.x = 0.2
+        if poi is None:
+            self.action = 2 # Delete
+        else:
+            self.action = 0
 
-        for poi in poilist.pois:
-            pos = poi.position
+            self.scale.x = 0.25
+            self.scale.y = 0.25
+            self.scale.z = 0.01
+
+            self.pose.position = copy.deepcopy(poi.position)
             name = poi.name
-            point = Point(pos.x, pos.y, 0.0)
-
-            self.points.append(point)
-            if name == 'stop_sign':
-                color = ColorRGBA(0.3, 0.3, 0.3, 1.0)
-            elif name == 'apple':
-                color = ColorRGBA(1.0, 0.2, 0.2, 1.0)
-            elif name == 'banana':
-                color = ColorRGBA(1.0, 1.0, 0.0, 1.0)
-            elif name == 'broccoli':
-                color = ColorRGBA(0.3, 0.8, 0.3, 1.0)
-            else: # Unknown
-                color = ColorRGBA(1.0, 1.0, 1.0, 1.0)
-            self.colors.append(color)
+            if name not in COLOR_DICT:
+                color = COLOR_DICT['unknown']
+            else:
+                color = COLOR_DICT[name]
+            self.color = color
 
 
 
@@ -346,6 +378,7 @@ class Visualizer(object):
         self.last_detection_time = None
         self.max_simul_bboxes = 0
         self.detections = DetectedObjectList()
+        self.max_simul_zones = 0
 
         self.tf_listener = tf.TransformListener()
 
@@ -356,6 +389,7 @@ class Visualizer(object):
         self.bbox_pub               = rospy.Publisher('robot/vis/bboxes', Marker, queue_size=10)
         self.bbox_text_pub          = rospy.Publisher('robot/vis/bbox_text', Marker, queue_size=10)
         self.poi_pub                = rospy.Publisher('robot/vis/poi', Marker, queue_size=10)
+        self.poi_dropline_pub       = rospy.Publisher('robot/vis/poidropline', Marker, queue_size=10)
         self.zones_pub              = rospy.Publisher('robot/vis/zones', Marker, queue_size=10)
 
         # Subscribers
@@ -405,11 +439,21 @@ class Visualizer(object):
     def poi_cb(self, pointofinterestlist):
         marker = PoiMarker(RobotMarkerId.POI, pointofinterestlist)
         self.poi_pub.publish(marker)
+        marker = PoiDroplineMarker(RobotMarkerId.POI_DROPLINE, pointofinterestlist)
+        self.poi_dropline_pub.publish(marker)
 
     
     def zone_cb(self, pointofinterestlist):
-        marker = ZoneMarker(RobotMarkerId.ZONES, pointofinterestlist)
-        self.zones_pub.publish(marker)
+        zones = pointofinterestlist.pois
+        n = len(zones)
+        self.max_simul_zones = max(self.max_simul_zones, n)
+        for idx in range(self.max_simul_zones):
+            if idx < n:
+                zone = zones[idx]
+                marker = ZoneMarker(RobotMarkerId.ZONE_START+idx, zone)
+            else:
+                marker = ZoneMarker(RobotMarkerId.ZONE_START+idx, None)
+            self.zones_pub.publish(marker)
 
 
     def publish_pose_marker(self):
