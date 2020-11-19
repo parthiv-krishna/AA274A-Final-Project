@@ -99,4 +99,5 @@
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find final_project)/rviz/project_sim.rviz"/>
 
   <node pkg="final_project" type="explore_control.py" name="explore_control" />
+  <node pkg="final_project" type="order_handler.py" name="order_handler" />
 </launch>
