@@ -24,7 +24,7 @@ class MapInflator:
         side_length = int(round(np.sqrt(old_map.shape[0])))
         old_map = old_map.reshape((side_length, side_length))
         print(old_map)
-        new_map = grey_dilation(old_map, size=(7,7))
+        new_map = grey_dilation(old_map, size=(13,13))
         new_map = new_map.reshape(side_length**2).tolist()
         print(len(new_map))
         new_msg = OccupancyGrid()

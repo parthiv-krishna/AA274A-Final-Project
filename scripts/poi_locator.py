@@ -130,7 +130,7 @@ class PoiLocator:
         name = obj.name
         dist = detected_object.distance
         confidence = detected_object.confidence  # simple approach to avoid false positives
-        if confidence > self.CONFIDENCE_THRESH and obj.distance < 0.5 and obj.name in PoiLocator.VENDOR_NAMES:
+        if confidence > self.CONFIDENCE_THRESH and obj.distance < 1 and obj.name in PoiLocator.VENDOR_NAMES:
             pos = self.current_pose.translation # x,y,z
             if name not in self.zones:
                 self.zones[name] = []
