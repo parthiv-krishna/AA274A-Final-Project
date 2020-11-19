@@ -10,7 +10,8 @@ from std_msgs.msg import Float32MultiArray, String, Int16
 import tf
 import Queue
 import time
-
+import itertools as it
+import numpy as np
 
 class Mode(Enum):
     IDLE = 0
@@ -19,12 +20,15 @@ class Mode(Enum):
     PARK = 3
     NAV = 4
 
+TEST_MODE = False
+
 class OrderHandler:
 
     STOP_TIME = 5.0
-    zones = {}
-
+    
+    
     def __init__(self):
+        self.zones = {"broccoli": [(2.79029108654, 0.783223185029, 0), (0.394770205126, 2.47427192837, 0)], "apple": [(0.22924740195, 1.51198895989, 0), (3.35546295623, 2.79917195998, 0)], "banana": [(2.10330022667, 1.88086786242, 0), (0.283785179284, 0.273597516056, 0)]} if TEST_MODE else {}
         rospy.init_node('order_handler', anonymous=True)
         self.waypoint_queue = Queue.Queue()        
         self.mode = Mode.IDLE
@@ -40,7 +44,8 @@ class OrderHandler:
         self.trans_listener = tf.TransformListener()     
         
         rospy.Subscriber("/nav_mode", Int16, self.nav_mode_callback)
-        rospy.Subscriber("/robot/zones", PointOfInterestList, self.zone_callback)
+        if not TEST_MODE: 
+            rospy.Subscriber("/robot/zones", PointOfInterestList, self.zone_callback)
         rospy.Subscriber("/order", Order, self.received_order_callback) 
         time.sleep(1) #Break time for the publisher to allow subsciber to contact/Establish connection
 
@@ -57,12 +62,28 @@ class OrderHandler:
         print("foods" + str(data.foods))
         print("location\n" + str(data.location))
         
-        for food in data.foods:
-            print("Adding waypoint for " + food + " at location " + str(self.zones[food][0]))
-            self.waypoint_queue.put(self.zones[food][0])
+        permutations = list(it.permutations(list(range(len(data.foods)))))
+        products = list(it.product(*[[0,1]]*len(data.foods)))
+        search_dict = {}
+        for perm in permutations:
+            for prod in products:
+                order = [self.zones[data.foods[p]][i] for p,i in zip(perm,prod)]
+                order.append((data.location.x, data.location.y, 0))
+                orders = np.array([[o[0],o[1]] for o in order])
+                dists = np.linalg.norm(orders[:-1] - orders[1:])
+                dist = np.sum(dists)
+                search_dict[tuple(order)] = dist
+        sorteds = sorted(search_dict, key=search_dict.get)
+        best_order = sorteds[0]
+                
+        # destination is data.location.x and data.location.y 
+        for x,y,th in best_order:
+            #print("Adding waypoint for " + food + " at location " + str(self.zones[food][0]))
+            self.waypoint_queue.put((x,y,th))
         
         print("Adding waypoint for delivery at location " + str((data.location.x, data.location.y, 0)))
-        self.waypoint_queue.put((data.location.x, data.location.y, 0))  
+        self.waypoint_queue.put((data.location.x, data.location.y, 0))
+       
     
     def nav_mode_callback(self, data):
         print ("Mode change: ", Mode(data.data))
