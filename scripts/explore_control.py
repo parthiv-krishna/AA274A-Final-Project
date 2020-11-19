@@ -21,7 +21,7 @@ class Mode(Enum):
 
 class Explorer:
 
-    STOP_TIME = 5.0
+    STOP_TIME = 10
 
     def __init__(self):
         rospy.init_node('explore_node', anonymous=True)
@@ -47,6 +47,7 @@ class Explorer:
         self.mode = Mode(data.data)
 
     def explore_load_goals (self, filename):
+        print("loading goals")
         fileObj = open(filename, "r+")
         fileObj.readline() #Get rid of the first line (x, y, theta)
 
