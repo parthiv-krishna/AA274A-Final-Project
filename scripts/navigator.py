@@ -5,6 +5,7 @@ import rospkg
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
 from geometry_msgs.msg import Twist, Pose2D, PoseStamped
 from std_msgs.msg import String, Int16
+from final_project.msg import DetectedObjectList
 import tf
 import numpy as np
 from numpy import linalg
@@ -25,6 +26,8 @@ class Mode(Enum):
     ALIGN = 1
     TRACK = 2
     PARK = 3
+    STOP = 4
+    CROSS = 5
     
 SAVE_POINTS = False
 
@@ -33,6 +36,10 @@ class Navigator:
     This node handles point to point turtlebot motion, avoiding obstacles.
     It is the sole node that should publish to cmd_vel
     """
+    
+    STOP_DIST = 2.0
+    STOP_TIME = 3.0
+    CROSS_TIME = 3.0
     
     def __init__(self):
     
@@ -119,6 +126,7 @@ class Navigator:
         rospy.Subscriber('/map_inflated', OccupancyGrid, self.map_callback)
         rospy.Subscriber('/map_metadata', MapMetaData, self.map_md_callback)
         rospy.Subscriber('/cmd_nav', Pose2D, self.cmd_nav_callback)
+        rospy.Subscriber('/detector/objects', DetectedObjectList, self.object_detected_callback)
 
         print "finished init"
         
@@ -151,6 +159,13 @@ class Navigator:
         self.map_height = msg.height
         self.map_resolution = msg.resolution
         self.map_origin = (msg.origin.position.x,msg.origin.position.y)
+        
+    def object_detected_callback(self, msg):
+        for obj in msg.ob_msgs:
+            # print("detected", obj.name)
+            if obj.name == "stop_sign" and obj.distance < self.STOP_DIST and self.mode == Mode.TRACK:
+                self.stop_time = rospy.get_time()
+                self.mode = Mode.STOP
 
     def map_callback(self,msg):
         """
@@ -244,10 +259,11 @@ class Navigator:
         are all properly set up / with the correct goals loaded
         """
         t = self.get_current_plan_time()
-
-        if self.mode == Mode.PARK:
+        if self.mode == Mode.STOP:
+            V, om = 0., 0.
+        elif self.mode == Mode.PARK:
             V, om = self.pose_controller.compute_control(self.x, self.y, self.theta, t)
-        elif self.mode == Mode.TRACK:
+        elif self.mode in [Mode.TRACK, Mode.CROSS]:
             V, om = self.traj_controller.compute_control(self.x, self.y, self.theta, t)
         elif self.mode == Mode.ALIGN:
             V, om = self.heading_controller.compute_control(self.x, self.y, self.theta, t)
@@ -386,7 +402,14 @@ class Navigator:
                     self.y_g = None
                     self.theta_g = None
                     self.switch_mode(Mode.IDLE)
-
+            elif self.mode == Mode.STOP:
+                if self.stop_time + self.STOP_TIME < rospy.get_time():
+                    self.switch_mode(Mode.CROSS)
+            elif self.mode == MODE.CROSS:
+                if self.stop_time + self.STOP_TIME + self.CROSS_TIME < rospy.get_time():
+                    self.switch_mode(Mode.TRACK)        
+                    
+                    
             self.publish_control()
             
             rate.sleep()
