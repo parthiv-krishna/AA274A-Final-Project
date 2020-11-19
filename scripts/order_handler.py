@@ -58,9 +58,10 @@ class OrderHandler:
         print("location\n" + str(data.location))
         
         for food in data.foods:
-            print(food)
+            print("Adding waypoint for " + food + " at location " + str(self.zones[food][0]))
             self.waypoint_queue.put(self.zones[food][0])
-            
+        
+        print("Adding waypoint for delivery at location " + str((data.location.x, data.location.y, 0)))
         self.waypoint_queue.put((data.location.x, data.location.y, 0))  
     
     def nav_mode_callback(self, data):
@@ -85,7 +86,7 @@ class OrderHandler:
                 continue                
             
             try:
-                (translation,rotation) = self.trans_listener.lookupTransform('/map', '/base_footprint', rospy.Time(0))
+                (translation,rotation) = self.trans_listener.lookupTransform('/odom', '/base_footprint', rospy.Time(0))
                 self.x = translation[0]
                 self.y = translation[1]
                 euler = tf.transformations.euler_from_quaternion(rotation)

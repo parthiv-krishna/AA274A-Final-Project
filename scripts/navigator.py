@@ -350,7 +350,7 @@ class Navigator:
         while not rospy.is_shutdown():
             # try to get state information to update self.x, self.y, self.theta
             try:
-                (translation,rotation) = self.trans_listener.lookupTransform('/map', '/base_footprint', rospy.Time(0))
+                (translation,rotation) = self.trans_listener.lookupTransform('/odom', '/base_footprint', rospy.Time(0))
                 self.x = translation[0]
                 self.y = translation[1]
                 euler = tf.transformations.euler_from_quaternion(rotation)
