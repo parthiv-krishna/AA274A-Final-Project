@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from utils import plot_line_segments
 
+import rospy
+
 class AStar(object):
     """Represents a motion planning problem to be solved using A*"""
 
@@ -166,8 +168,8 @@ class AStar(object):
             print("Goal is not free")
             return False
         
-        
-        while len(self.open_set) > 0:
+        start_time = rospy.get_time()
+        while len(self.open_set) > 0 and rospy.get_time() < start_time + 10:
             x_current = self.find_best_est_cost_through()
             if x_current == self.x_goal:
                 self.path = self.reconstruct_path()
