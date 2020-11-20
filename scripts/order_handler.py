@@ -62,6 +62,7 @@ class OrderHandler:
             self.zones[poi.name].append((poi.position.x, poi.position.y, 0))
     
     def received_order_callback(self, data): 
+        self.cargo = []
         #for vendor in data.foods:
         print("received order")
         print("foods" + str(data.foods))
@@ -123,11 +124,11 @@ class OrderHandler:
         rate = rospy.Rate(1)
         while not rospy.is_shutdown():
         
+            #print(self.waypoint_queue)
             if self.waypoint_queue.empty():
+                print("q empty")
                 self.next_point = (self.x, self.y, self.theta, "") if self.next_point is None else self.next_point  
                 if (self.x - self.next_point[0])**2 + (self.y - self.next_point[1])**2 < 0.25:
-                    # reached goal
-                    self.cargo = []
                     self.is_navigating = False
                 continue                
             
@@ -159,7 +160,7 @@ class OrderHandler:
                     rospy.loginfo("Orderer reached waypoint, stopping for " + str(self.STOP_TIME) + " seconds")
                     rospy.sleep(self.STOP_TIME)
                 self.send_nav_command(self.next_point[:3])
-                
+                self.cargo_publisher.publish(self.cargo)
                 if (self.x - self.last_point[0])**2 + (self.y - self.last_point[1])**2 > 0.25:
                     # left last point
                     self.mode = Mode.NAV
