@@ -2,7 +2,7 @@
 
 import rospy
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
-from geometry_msgs.msg import Point, Quaternion, Twist, Transform, TransformStamped, Vector3
+from geometry_msgs.msg import Point, Pose2D, Quaternion, Transform, TransformStamped, Vector3
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import String, ColorRGBA
 from tf2_msgs.msg import TFMessage
@@ -24,6 +24,8 @@ class RobotMarkerId(IntEnum):
     BBOX = 103
     POI = 104
     POI_DROPLINE = 105
+    GOAL = 106
+    GOAL_DROPLINE = 107
 
     # IDs 200-299 reserved for bounding box text markers
     BBOX_TEXT_START = 200
@@ -76,10 +78,49 @@ class FootprintMarker(Marker):
         self.scale.x = 0.16 # Wheel separation = 0.16 meters
         self.scale.y = 0.16
         self.scale.z = 0.02
-        self.color.a = 1.0
-        self.color.r = 1.0
-        self.color.g = 1.0
-        self.color.b = 1.0
+        self.color = ColorRGBA(1.0, 1.0, 1.0, 1.0)
+
+
+class GoalMarker(Marker):
+
+    step = 0
+    CLEARANCE = 1.5
+
+    def __init__(self, marker_id, pose2d):
+        super(GoalMarker, self).__init__()
+        self.header.frame_id = "map"
+        self.header.stamp = rospy.Time()
+        self.ns = MARKER_NAMESPACE
+        self.id = marker_id
+        self.type = self.ARROW
+        self.action = 0
+        self.scale.x = 0.0 # Shaft diameter
+        self.scale.y = 0.15 # Head diameter
+        self.scale.z = 0.5 # Head length if nonzero
+        self.color = ColorRGBA(0.1, 1.0, 0.1, 1.0)
+
+        pt2 = Point(pose2d.x, pose2d.y, GoalMarker.CLEARANCE    +0.05*np.sin(GoalMarker.step))
+        pt1 = Point(pose2d.x, pose2d.y, GoalMarker.CLEARANCE+0.1+0.05*np.sin(GoalMarker.step))
+        self.points.extend([pt1, pt2])
+        GoalMarker.step += 0.2
+
+
+class GoalDroplineMarker(Marker):
+
+    def __init__(self, marker_id, pose2d):
+        super(GoalDroplineMarker, self).__init__()
+        self.header.frame_id = "map"
+        self.header.stamp = rospy.Time()
+        self.ns = MARKER_NAMESPACE
+        self.id = marker_id
+        self.type = self.LINE_LIST
+        self.scale.x = 0.002
+        self.color = ColorRGBA(0.8, 0.8, 0.8, 1.0)
+
+        pt1 = Point(pose2d.x, pose2d.y, GoalMarker.CLEARANCE+0.05*np.sin(GoalMarker.step))
+        pt2 = Point(pose2d.x, pose2d.y, 0.0)
+        self.points.extend([pt1, pt2])
+
 
 
 class FrustumMarker(Marker):
@@ -97,6 +138,8 @@ class FrustumMarker(Marker):
         self.id = marker_id
         self.type = self.LINE_LIST
         self.action = 0
+
+        self.scale.x = 0.002
 
         x_cam = cam_tf.translation.x
         y_cam = cam_tf.translation.y
@@ -128,23 +171,17 @@ class FrustumMarker(Marker):
             pt_tr, pt_br
         ])
 
-        self.scale.x = 0.002
-        self.scale.y = 0.01
-        self.scale.z = 0.01
-        self.color.a = 1.0
         if detected:
-            self.color.r = 0.8
-            self.color.g = 1.0
-            self.color.b = 0.8
+            self.color = ColorRGBA(0.8, 1.0, 0.8, 1.0)
         else:
-            self.color.r = 1.0
-            self.color.g = 1.0
-            self.color.b = 1.0
+            self.color = ColorRGBA(1.0, 1.0, 1.0, 1.0)
 
 
 class BboxMarker(Marker):
     def __init__(self, marker_id, cam_tf, theta, detections):
         super(BboxMarker, self).__init__()
+
+        GREEN_THRESH = 0.875
 
         FOV = 1.3962634
         alpha = FOV/2.0
@@ -161,13 +198,6 @@ class BboxMarker(Marker):
         self.action = 0
 
         self.scale.x = 0.002
-        self.scale.y = 0.01
-        self.scale.z = 0.01
-        self.color.a = 1.0
-
-        self.color.r = 0.1
-        self.color.g = 1.0
-        self.color.b = 0.1
 
         if detections is None:
             # print("no detection")
@@ -208,13 +238,20 @@ class BboxMarker(Marker):
                 pt_tr  = Point(x_cam + d*np.cos(theta+a_right), y_cam + d*np.sin(theta+a_right), z_cam + d*np.sin(a_top))
                 pt_br  = Point(x_cam + d*np.cos(theta+a_right), y_cam + d*np.sin(theta+a_right), z_cam + d*np.sin(a_bottom))
 
-                self.points.extend([
+                points = [
                     pt_cam, pt_cen,
                     pt_tl, pt_bl,
                     pt_bl, pt_br,
                     pt_br, pt_tr,
                     pt_tr, pt_tl
-                ])
+                ]
+                self.points.extend(points)
+                if detection.confidence > GREEN_THRESH:
+                    color = ColorRGBA(0.1, 1.0, 0.1, 1.0)
+                else:
+                    color = ColorRGBA(0.9, 0.9, 0.0, 1.0)
+                colors = [color for _ in range(len(points))]
+                self.colors.extend(colors)
 
 
 class BboxTextMarker(Marker):
@@ -235,14 +272,8 @@ class BboxTextMarker(Marker):
         self.type = self.TEXT_VIEW_FACING
         self.action = 0
 
-        self.scale.x = 0.05
-        self.scale.y = 0.05
-        self.scale.z = 0.05
-
-        self.color.a = 1.0
-        self.color.r = 1.0
-        self.color.g = 1.0
-        self.color.b = 1.0
+        self.scale = Vector3(0.05, 0.05, 0.05)
+        self.color = ColorRGBA(1.0, 1.0, 1.0, 1.0)
 
         if detection is None:
             # print("no detection")
@@ -318,12 +349,7 @@ class PoiDroplineMarker(Marker):
         self.action = 0
 
         self.scale.x = 0.002
-        self.scale.y = 0.01
-        self.scale.z = 0.01
-        self.color.a = 1.0
-        self.color.r = 0.3
-        self.color.g = 0.3
-        self.color.b = 0.3
+        self.color = ColorRGBA(0.3, 0.3, 0.3, 1.0)
 
         for poi in poilist.pois:
             pos = poi.position
@@ -346,11 +372,7 @@ class ZoneMarker(Marker):
             self.action = 2 # Delete
         else:
             self.action = 0
-
-            self.scale.x = 0.25
-            self.scale.y = 0.25
-            self.scale.z = 0.01
-
+            self.scale = Vector3(0.25, 0.25, 0.01)
             self.pose.position = copy.deepcopy(poi.position)
             name = poi.name
             if name not in COLOR_DICT:
@@ -360,9 +382,9 @@ class ZoneMarker(Marker):
             self.color = color
 
 
-
 class Visualizer(object):
     """Node responsible for rviz marker message dispatches to satisfy 'command center' requirement.
+    If performance becomes a problem, cache the markers.
     """
 
     def __init__(self):
@@ -372,7 +394,9 @@ class Visualizer(object):
         self.current_pose = None    # Pose of base frame
         self.theta = 0
         self.camera_tf = None       # Transform from base_frame to base_camera
+        self.nav_goal = None
         self.vendors = None         # Stub
+
 
         # Detection and bboxes
         self.last_detection_time = None
@@ -385,17 +409,20 @@ class Visualizer(object):
         # Publishers
         self.current_pose_pub       = rospy.Publisher('robot/vis/pose/current', Marker, queue_size=10)
         self.current_footprint_pub  = rospy.Publisher('robot/vis/footprint', Marker, queue_size=10)
+        self.goal_pub               = rospy.Publisher('robot/vis/goal', Marker, queue_size=10)
+        self.goal_dropline_pub      = rospy.Publisher('robot/vis/goal', Marker, queue_size=10)
         self.frustum_pub            = rospy.Publisher('robot/vis/frustum', Marker, queue_size=10)
         self.bbox_pub               = rospy.Publisher('robot/vis/bboxes', Marker, queue_size=10)
-        self.bbox_text_pub          = rospy.Publisher('robot/vis/bbox_text', Marker, queue_size=10)
+        self.bbox_text_pub          = rospy.Publisher('robot/vis/bboxes', Marker, queue_size=10)
         self.poi_pub                = rospy.Publisher('robot/vis/poi', Marker, queue_size=10)
-        self.poi_dropline_pub       = rospy.Publisher('robot/vis/poidropline', Marker, queue_size=10)
+        self.poi_dropline_pub       = rospy.Publisher('robot/vis/poi', Marker, queue_size=10)
         self.zones_pub              = rospy.Publisher('robot/vis/zones', Marker, queue_size=10)
 
         # Subscribers
         self.detector_sub = rospy.Subscriber('/detector/objects', DetectedObjectList, self.detection_cb)
         self.poi_sub      = rospy.Subscriber('/robot/poi', PointOfInterestList, self.poi_cb)
         self.zone_sub     = rospy.Subscriber('/robot/zones', PointOfInterestList, self.zone_cb)
+        self.goal_sub     = rospy.Subscriber('/cmd_nav', Pose2D, self.goal_cb)
 
 
     def update_current_pose(self):
@@ -436,6 +463,10 @@ class Visualizer(object):
             return False
 
 
+    def goal_cb(self, pose2d):
+        self.nav_goal = pose2d
+
+
     def poi_cb(self, pointofinterestlist):
         marker = PoiMarker(RobotMarkerId.POI, pointofinterestlist)
         self.poi_pub.publish(marker)
@@ -464,6 +495,14 @@ class Visualizer(object):
     def publish_footprint_marker(self):
         marker = FootprintMarker(RobotMarkerId.CURRENT_FOOTPRINT, self.current_pose)
         self.current_footprint_pub.publish(marker)
+
+
+    def publish_goal_marker(self):
+        if self.nav_goal is not None:
+            marker = GoalMarker(RobotMarkerId.GOAL, self.nav_goal)
+            self.goal_pub.publish(marker)
+            marker = GoalDroplineMarker(RobotMarkerId.GOAL_DROPLINE, self.nav_goal)
+            self.goal_dropline_pub.publish(marker)
 
 
     def publish_frustum_marker(self):
@@ -509,6 +548,7 @@ class Visualizer(object):
                 self.publish_footprint_marker()    # /robot/vis/footprint
                 self.publish_frustum_marker()      # /robot/vis/frustum
                 self.publish_bboxes()              # /robot/vis/bboxes
+                self.publish_goal_marker()         # /robot/vis/goal
 
             rate.sleep()
 

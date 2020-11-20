@@ -166,26 +166,10 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /robot/vis/pose/current
-      Name: Marker
-      Namespaces:
-        robot: true
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
       Marker Topic: /robot/vis/bboxes
       Name: Marker
       Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /robot/vis/bbox_text
-      Name: Marker
-      Namespaces:
-        {}
+        robot: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -201,12 +185,12 @@ Visualization Manager:
       Marker Topic: /robot/vis/zones
       Name: Marker
       Namespaces:
-        {}
+        robot: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /robot/vis/poidropline
+      Marker Topic: /robot/vis/goal
       Name: Marker
       Namespaces:
         robot: true
@@ -247,25 +231,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.62931776
+      Distance: 6.43899488
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.92946601
-        Y: 0.115523927
-        Z: -0.0917241201
+        X: 2.01501298
+        Y: 0.312122613
+        Z: 0.368208528
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.604798615
+      Pitch: 0.489798903
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.2554127
+      Yaw: 1.06041098
     Saved: ~
 Window Geometry:
   Displays:
