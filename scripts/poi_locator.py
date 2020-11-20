@@ -17,7 +17,7 @@ class PoiLocator:
     VENDOR_NAMES = set(["broccoli", "banana", "apple"])
 
     POI_EXCLUSION_DIST = 0.5 # meters
-    ZONE_ACQUIRE_DIST = 1.0 # meters
+    ZONE_ACQUIRE_DIST = 1.5 # meters
     ZONE_EXCLUSION_DIST = 1.0 # meters
     CONFIDENCE_THRESH = 0.825
 

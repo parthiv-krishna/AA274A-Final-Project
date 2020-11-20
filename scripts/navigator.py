@@ -96,7 +96,7 @@ class Navigator:
         self.at_thresh_theta = 0.05
 
         # trajectory smoothing
-        self.spline_alpha = 0.15
+        self.spline_alpha = 0.05
         self.traj_dt = 0.1
 
         # trajectory tracking controller parameters
@@ -104,6 +104,8 @@ class Navigator:
         self.kpy = 0.5
         self.kdx = 1.5
         self.kdy = 1.5
+
+        self.stop_time = 0.0
 
         # heading controller parameters
         self.kp_th = 2.
@@ -406,7 +408,7 @@ class Navigator:
             elif self.mode == Mode.STOP:
                 if self.stop_time + self.STOP_TIME < rospy.get_time():
                     self.switch_mode(Mode.CROSS)
-            elif self.mode == MODE.CROSS:
+            elif self.mode == Mode.CROSS:
                 if self.stop_time + self.STOP_TIME + self.CROSS_TIME < rospy.get_time():
                     self.switch_mode(Mode.TRACK)        
                     
