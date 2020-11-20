@@ -128,7 +128,7 @@ class PoiLocator:
         xcen, ycen = (xmax+xmin)/2, (ymax+ymin)/2
         d = distance
 
-        a_cen = alpha / apix * (apix-xcen)
+        # a_cen = alpha / apix * (apix-xcen)
         a_left = alpha / apix * (apix-xmin)
         a_right = alpha / apix * (apix-xmax)
         a_top = alpha / apix * (apix-ymin)
@@ -140,7 +140,7 @@ class PoiLocator:
         pt_top = Vector3(x_cam + d*np.cos(theta+a_cen), y_cam + d*np.sin(theta+a_cen), z_cam + d*np.sin(a_top))
         pt_bottom = Vector3(x_cam + d*np.cos(theta+a_cen), y_cam + d*np.sin(theta+a_cen), z_cam + d*np.sin(a_bottom))
         """
-        pt_cen = Vector3(x_cam + d*np.cos(theta+a_cen), y_cam + d*np.sin(theta+a_cen), z_cam + d*np.sin((a_top+a_bottom)/2))
+        # pt_cen = Vector3(x_cam + d*np.cos(theta+a_cen), y_cam + d*np.sin(theta+a_cen), z_cam + d*np.sin((a_top+a_bottom)/2))
         # pt_tl  = Vector3(x_cam + d*np.cos(theta+a_left), y_cam + d*np.sin(theta+a_left), z_cam + d*np.sin(a_top))
         pt_bl  = Vector3(x_cam + d*np.cos(theta+a_left), y_cam + d*np.sin(theta+a_left), z_cam + d*np.sin(a_bottom))
         pt_tr  = Vector3(x_cam + d*np.cos(theta+a_right), y_cam + d*np.sin(theta+a_right), z_cam + d*np.sin(a_top))
@@ -148,7 +148,6 @@ class PoiLocator:
 
         return (pt_bl, pt_tr)
         
-
 
     def euclidean_distance(self, p1, p2):
         """Return L2 distance between two Vector3 objects."""
@@ -205,7 +204,6 @@ class PoiLocator:
     def detection_callback(self, detected_object_list):
         if self.current_pose is not None:
             for obj in detected_object_list.ob_msgs:
-                # print("received message ", obj.name, obj.distance)
                 self.register_poi(obj)
                 self.register_zone(obj)
 

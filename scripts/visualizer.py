@@ -10,7 +10,7 @@ import tf
 import numpy as np
 
 from navigator import Mode as NavigatorMode
-from final_project.msg import DetectedObject, DetectedObjectList, PointOfInterest, PointOfInterestList
+from final_project.msg import Cargo, DetectedObject, DetectedObjectList, PointOfInterest, PointOfInterestList
 
 import copy
 from enum import IntEnum
@@ -432,19 +432,127 @@ class NavModeMarker(Marker):
 
 
 class CargoMarker(Marker):
-    def __init__(self, marker_id, transform, cargolist):
+    def __init__(self, marker_id, transform, theta, cargolist):
         super(CargoMarker, self).__init__()
         self.header.frame_id = "odom"
         self.header.stamp = rospy.Time()
         self.ns = MARKER_NAMESPACE
         self.id = marker_id
         self.type = self.LINE_LIST
+        self.scale.x = 0.002
+        self.color = ColorRGBA(1.0, 1.0, 1.0, 1.0)
+        # No way to access rviz's orbital camera, so we use text as a hack.
+
+        # Draw the circle.
+        R = 0.15
+        cen_x = transform.translation.x
+        cen_y = transform.translation.y
+        cen_z = 0.15
+
+        # Circle
+        self.draw_horizontal_circle(cen_x, cen_y, cen_z, R)
+        # Radials
+
+        for idx in range(len(cargolist.cargo)):
+            if idx == 0:
+                angle = theta+np.pi
+            elif idx == 1:
+                angle = theta+np.pi-0.8
+            elif idx == 2:
+                angle = theta+np.pi+0.8
+            else:
+                angle = 0 # This shouldn't happen.
+
+            self.draw_radial(cen_x, cen_y, cen_z, angle, R)
+            self.draw_vertical_circle(cen_x+R*np.cos(angle), cen_y+R*np.sin(angle), cen_z, 0.05)
+
+        """
+        self.draw_radial(cen_x, cen_y, cen_z, theta+np.pi, R, color)
+        self.draw_radial(cen_x, cen_y, cen_z, theta+np.pi-0.8, R, color)
+        self.draw_radial(cen_x, cen_y, cen_z, theta+np.pi+0.8, R, color)
+
+        self.draw_vertical_circle(cen_x+R*np.cos(theta+np.pi), cen_y+R*np.sin(theta+np.pi), cen_z, 0.05, color)
+        self.draw_vertical_circle(cen_x+R*np.cos(theta+np.pi-0.8), cen_y+R*np.sin(theta+np.pi-0.8), cen_z, 0.05, color)
+        self.draw_vertical_circle(cen_x+R*np.cos(theta+np.pi+0.8), cen_y+R*np.sin(theta+np.pi+0.8), cen_z, 0.05, color)
+        """
+
+    def draw_horizontal_circle(self, cen_x, cen_y, cen_z, R, n=32):
+        for i in range(n):
+            # if i % 2 == 0:
+            #     continue
+            # Horizontal
+            pt1 = Point(cen_x+R*np.cos(2.0*np.pi/n*i),     cen_y+R*np.sin(2.0*np.pi/n*i),     cen_z)
+            pt2 = Point(cen_x+R*np.cos(2.0*np.pi/n*(i+1)), cen_y+R*np.sin(2.0*np.pi/n*(i+1)), cen_z)
+            # Vertical
+            # pt1 = Point(cen_x, cen_y+R*np.sin(2.0*np.pi/n*i),     cen_z+R*np.cos(2.0*np.pi/n*i))
+            # pt2 = Point(cen_x, cen_y+R*np.sin(2.0*np.pi/n*(i+1)), cen_z+R*np.cos(2.0*np.pi/n*(i+1)))
+            self.points.extend([pt1, pt2])
+            # self.colors.extend([color])
+
+    def draw_vertical_circle(self, cen_x, cen_y, cen_z, R, n=16):
+        for i in range(n):
+            if i % 2 == 0:
+                continue
+            pt1 = Point(cen_x, cen_y+R*np.sin(2.0*np.pi/n*i),     cen_z+R*np.cos(2.0*np.pi/n*i))
+            pt2 = Point(cen_x, cen_y+R*np.sin(2.0*np.pi/n*(i+1)), cen_z+R*np.cos(2.0*np.pi/n*(i+1)))
+            self.points.extend([pt1, pt2])
+            # self.colors.extend([color])
+
+
+    def draw_radial(self, cen_x, cen_y, cen_z, theta, R):
+        pt1 = Point(cen_x+R*np.cos(theta),   cen_y+R*np.sin(theta),   cen_z+0.05)
+        pt2 = Point(cen_x+R*np.cos(theta),   cen_y+R*np.sin(theta),   cen_z+R)
+        pt3 = Point(cen_x+2*R*np.cos(theta), cen_y+2*R*np.sin(theta), cen_z+2*R)
+        self.points.extend([
+            pt1, pt2,
+            pt2, pt3
+        ])
+        # self.colors.extend([color, color])
 
 
 class CargoTextMarker(Marker):
-    def __init__(self, marker_id, transform, cargo):
+    def __init__(self, marker_id, transform, theta, cargolist, idx):
         super(CargoTextMarker, self).__init__()
-        pass
+        self.header.frame_id = "odom"
+        self.header.stamp = rospy.Time()
+        self.ns = MARKER_NAMESPACE
+        self.id = marker_id
+        self.type = self.TEXT_VIEW_FACING
+        self.scale = Vector3(0.05, 0.05, 0.05)
+
+        if idx is None:
+            self.action = 2 # Delete
+        else:
+            self.action = 0
+
+            name = cargolist.cargo[idx]
+            if name in COLOR_DICT:
+                color = COLOR_DICT[name]
+            else:
+                color = COLOR_DICT['unknown']
+            self.text = name
+            self.color = color
+
+            # Draw the circle.
+            R = 0.15
+            cen_x = transform.translation.x
+            cen_y = transform.translation.y
+            cen_z = 0.15
+
+            if idx == 0:
+                angle = theta+np.pi
+            elif idx == 1:
+                angle = theta+np.pi-0.8
+            elif idx == 2:
+                angle = theta+np.pi+0.8
+            else:
+                angle = 0 # This shouldn't happen.
+
+            self.pose.position.x = cen_x+2*R*np.cos(angle)
+            self.pose.position.y = cen_y+2*R*np.sin(angle)
+            self.pose.position.z = cen_z+2*R+0.02
+
+
 
 
 class Visualizer(object):
@@ -460,7 +568,8 @@ class Visualizer(object):
         self.theta = 0
         self.camera_tf = None       # Transform from base_frame to base_camera
         self.nav_goal = None
-        self.vendors = None         # Stub
+        self.nav_mode = None
+        self.cargo = None
 
 
         # Detection and bboxes
@@ -468,6 +577,7 @@ class Visualizer(object):
         self.max_simul_bboxes = 0
         self.detections = DetectedObjectList()
         self.max_simul_zones = 0
+        self.max_simul_cargo = 3
 
         self.tf_listener = tf.TransformListener()
 
@@ -476,7 +586,7 @@ class Visualizer(object):
         self.current_footprint_pub  = rospy.Publisher('robot/vis/footprint', Marker, queue_size=10)
         self.goal_pub               = rospy.Publisher('robot/vis/goal', Marker, queue_size=10)
         self.goal_dropline_pub      = rospy.Publisher('robot/vis/goal', Marker, queue_size=10)
-        self.nav_mode_pub           = rospy.Publisher('robot/vis/nav_goal', Marker, queue_size=10)
+        self.nav_mode_pub           = rospy.Publisher('robot/vis/nav_mode', Marker, queue_size=10)
         self.frustum_pub            = rospy.Publisher('robot/vis/frustum', Marker, queue_size=10)
         self.bbox_pub               = rospy.Publisher('robot/vis/bboxes', Marker, queue_size=10)
         self.bbox_text_pub          = rospy.Publisher('robot/vis/bboxes', Marker, queue_size=10)
@@ -484,6 +594,7 @@ class Visualizer(object):
         self.poi_dropline_pub       = rospy.Publisher('robot/vis/poi', Marker, queue_size=10)
         self.poi_bbox_pub           = rospy.Publisher('robot/vis/poi', Marker, queue_size=10)
         self.zones_pub              = rospy.Publisher('robot/vis/zones', Marker, queue_size=10)
+        self.cargo_pub              = rospy.Publisher('robot/vis/cargo', Marker, queue_size=10)
 
         # Subscribers
         self.detector_sub = rospy.Subscriber('/detector/objects', DetectedObjectList, self.detection_cb)
@@ -491,6 +602,7 @@ class Visualizer(object):
         self.zone_sub     = rospy.Subscriber('/robot/zones', PointOfInterestList, self.zone_cb)
         self.goal_sub     = rospy.Subscriber('/cmd_nav', Pose2D, self.goal_cb)
         self.nav_mode_sub = rospy.Subscriber('/nav_mode', Int16, self.nav_mode_cb)
+        self.cargo_sub    = rospy.Subscriber('/robot/cargo', Cargo, self.cargo_cb)
 
 
     def update_current_pose(self):
@@ -532,11 +644,10 @@ class Visualizer(object):
 
     def nav_mode_cb(self, int16):
         for member in NavigatorMode:
-            if member.value == int16:
+            if member.value == int16.data:
                 name = member.name
                 break
-        marker = NavModeMarker(RobotMarkerId.NAV_MODE_TEXT, self.current_pose, "nav:" + name)
-        self.nav_mode_pub.publish(marker)
+        self.nav_mode = name
 
 
     def goal_cb(self, pose2d):
@@ -565,6 +676,10 @@ class Visualizer(object):
             self.zones_pub.publish(marker)
 
 
+    def cargo_cb(self, cargo):
+        self.cargo = cargo
+
+
     def publish_pose_marker(self):
         marker = PoseArrowMarker(RobotMarkerId.CURRENT_POSE, self.current_pose)
         self.current_pose_pub.publish(marker)
@@ -573,6 +688,12 @@ class Visualizer(object):
     def publish_footprint_marker(self):
         marker = FootprintMarker(RobotMarkerId.CURRENT_FOOTPRINT, self.current_pose)
         self.current_footprint_pub.publish(marker)
+
+
+    def publish_nav_mode_marker(self):
+        if self.nav_mode is not None:
+            marker = NavModeMarker(RobotMarkerId.NAV_MODE_TEXT, self.current_pose, "nav:" + self.nav_mode)
+            self.nav_mode_pub.publish(marker)
 
 
     def publish_goal_marker(self):
@@ -607,6 +728,21 @@ class Visualizer(object):
             else:
                 marker = BboxTextMarker(RobotMarkerId.BBOX_TEXT_START+idx, self.camera_tf, self.theta, None)
             self.bbox_text_pub.publish(marker)
+
+    
+    def publish_cargo_marker(self):
+        if self.cargo is not None:
+            marker = CargoMarker(RobotMarkerId.CARGO, self.current_pose, self.theta, self.cargo)
+            self.cargo_pub.publish(marker)
+            n = len(self.cargo.cargo)
+            self.max_simul_cargo = max(self.max_simul_cargo, n)
+            for idx in range(self.max_simul_cargo):
+                if idx < n:
+                    # cargo = self.cargo.cargo[idx]
+                    marker = CargoTextMarker(RobotMarkerId.CARGO_TEXT_START+idx, self.current_pose, self.theta, self.cargo, idx)
+                else:
+                    marker = CargoTextMarker(RobotMarkerId.CARGO_TEXT_START+idx, self.current_pose, self.theta, self.cargo, None)
+                self.cargo_pub.publish(marker)
  
 
     def shutdown_callback(self):
@@ -617,8 +753,6 @@ class Visualizer(object):
         print("Visualizer node started...")
         rate = rospy.Rate(10) # 10 Hz
         while not rospy.is_shutdown():
-            # rospy.loginfo(self.current_pose.theta)
-
             self.update_current_pose()
             self.get_camera_tf()
             if self.current_pose is not None:
@@ -627,6 +761,8 @@ class Visualizer(object):
                 self.publish_frustum_marker()      # /robot/vis/frustum
                 self.publish_bboxes()              # /robot/vis/bboxes
                 self.publish_goal_marker()         # /robot/vis/goal
+                self.publish_nav_mode_marker()
+                self.publish_cargo_marker()
 
             rate.sleep()
 
