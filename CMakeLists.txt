@@ -56,6 +56,7 @@ add_message_files(
  PointOfInterest.msg
  PointOfInterestList.msg
  Order.msg
+ Cargo.msg
 )
 
 ## Generate services in the 'srv' folder

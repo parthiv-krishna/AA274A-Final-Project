@@ -3,7 +3,7 @@
 from enum import Enum
 
 import rospy
-from final_project.msg import PointOfInterestList, Order
+from final_project.msg import PointOfInterestList, Order, Cargo
 from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
 from std_msgs.msg import Float32MultiArray, String, Int16
@@ -20,7 +20,7 @@ class Mode(Enum):
     PARK = 3
     NAV = 4
 
-TEST_MODE = False
+TEST_MODE = True
 
 class OrderHandler:
 
@@ -40,8 +40,10 @@ class OrderHandler:
         self.next_point = None
 
         self.nav_goal_publisher = rospy.Publisher("/cmd_nav", Pose2D, queue_size=1)
+        self.cargo_publisher = rospy.Publisher("/robot/cargo", Cargo, queue_size=5)
 
-        self.trans_listener = tf.TransformListener()     
+        self.trans_listener = tf.TransformListener()
+        self.cargo = []
         
         rospy.Subscriber("/nav_mode", Int16, self.nav_mode_callback)
         if not TEST_MODE: 
@@ -65,24 +67,39 @@ class OrderHandler:
         permutations = list(it.permutations(list(range(len(data.foods)))))
         products = list(it.product(*[[0,1]]*len(data.foods)))
         search_dict = {}
+        Zones = self.zones.copy()
         for perm in permutations:
             for prod in products:
-                order = [self.zones[data.foods[p]][i] for p,i in zip(perm,prod)]
+                order = [Zones[data.foods[p]][i] for p,i in zip(perm,prod)]
                 order.append((data.location.x, data.location.y, 0))
                 orders = np.array([[o[0],o[1]] for o in order])
                 dists = np.linalg.norm(orders[:-1] - orders[1:])
                 dist = np.sum(dists)
                 search_dict[tuple(order)] = dist
+                
         sorteds = sorted(search_dict, key=search_dict.get)
         best_order = sorteds[0]
                 
+                
+        reverse_dict = {}
+        for k, v in Zones.items():
+            for pt in v:
+                reverse_dict[pt] = k
+
         # destination is data.location.x and data.location.y 
+        print(reverse_dict)
+        first = True
         for x,y,th in best_order:
             #print("Adding waypoint for " + food + " at location " + str(self.zones[food][0]))
-            self.waypoint_queue.put((x,y,th))
-        
+            food = "" if first else reverse_dict[(x, y, th)]
+            not_first = False
+            print(food)
+            waypoint = (x,y,th, food)
+            print(waypoint)
+            self.waypoint_queue.put(waypoint)
+
         print("Adding waypoint for delivery at location " + str((data.location.x, data.location.y, 0)))
-        self.waypoint_queue.put((data.location.x, data.location.y, 0))
+        self.waypoint_queue.put((data.location.x, data.location.y, 0, "delivered"))
        
     
     def nav_mode_callback(self, data):
@@ -101,9 +118,12 @@ class OrderHandler:
     def control_loop(self):
         rate = rospy.Rate(1)
         while not rospy.is_shutdown():
+        
             if self.waypoint_queue.empty():
-                #print("waypoint queue empty")
-                #print(str(self.pois))
+                self.next_point = (self.x, self.y, self.theta, "") if self.next_point is None else self.next_point  
+                if (self.x - self.next_point[0])**2 + (self.y - self.next_point[1])**2 < 0.25:
+                    # reached goal
+                    self.cargo = []
                 continue                
             
             try:
@@ -120,14 +140,18 @@ class OrderHandler:
                 pass
 
             if self.mode == Mode.IDLE or self.mode == Mode.PARK:
-                self.next_point = (self.x, self.y, self.theta) if self.next_point is None else self.next_point                
+                self.next_point = (self.x, self.y, self.theta, "") if self.next_point is None else self.next_point                
                 if (self.x - self.next_point[0])**2 + (self.y - self.next_point[1])**2 < 0.25:
                     # reached point
                     self.last_point = self.next_point
+                    print(self.last_point)
+                    self.cargo.append(self.last_point[3])
+                    self.cargo_publisher.publish(self.cargo)
                     self.next_point = self.waypoint_queue.get()
                     rospy.loginfo("Orderer reached waypoint, stopping for " + str(self.STOP_TIME) + " seconds")
                     rospy.sleep(self.STOP_TIME)
-                self.send_nav_command(self.next_point)
+                self.send_nav_command(self.next_point[:3])
+                
                 if (self.x - self.last_point[0])**2 + (self.y - self.last_point[1])**2 > 0.25:
                     # left last point
                     self.mode = Mode.NAV
