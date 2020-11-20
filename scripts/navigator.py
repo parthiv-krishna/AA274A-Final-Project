@@ -164,8 +164,9 @@ class Navigator:
         for obj in msg.ob_msgs:
             # print("detected", obj.name)
             if obj.name == "stop_sign" and obj.distance < self.STOP_DIST and self.mode == Mode.TRACK:
-                self.stop_time = rospy.get_time()
-                self.mode = Mode.STOP
+                if self.stop_time + self.STOP_TIME + self.CROSS_TIME < rospy.get_time():
+                    self.stop_time = rospy.get_time()
+                    self.mode = Mode.STOP
 
     def map_callback(self,msg):
         """
