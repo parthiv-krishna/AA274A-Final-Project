@@ -39,7 +39,7 @@ class Navigator:
     
     STOP_DIST = 2.0
     STOP_TIME = 3.0
-    CROSS_TIME = 3.0
+    CROSS_TIME = 10.0
     
     def __init__(self):
     
