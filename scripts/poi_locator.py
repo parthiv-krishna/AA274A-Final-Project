@@ -101,6 +101,54 @@ class PoiLocator:
         pt_cen = Vector3(x_cam + d*np.cos(theta+a_cen), y_cam + d*np.sin(theta+a_cen), z_cam + d*np.sin((a_top+a_bottom)/2))
         return pt_cen
 
+    
+    def bound_object(self, detected_object):
+        """Returns two Vector3(x,y,z) objects representing a 3D bounding box."""
+
+        # Since our objects are 2d, the bboxes are flat squares in 3d space.
+
+        FOV = 1.3962634
+        alpha = FOV/2.0
+        HPIX = 300 # num of pixels across
+        VPIX = HPIX
+        apix = HPIX/2.0 # num of pixels in part of screen subtended by alpha
+                        # Cam is 300 pixels across. so 150 on each half.
+        theta = self.theta
+        distance = detected_object.distance
+        corners = detected_object.corners
+        cam_tf = self.camera_tf
+
+        x_cam = cam_tf.translation.x
+        y_cam = cam_tf.translation.y
+        z_cam = cam_tf.translation.z
+        # pt_cam = Point(x_cam, y_cam, z_cam)
+
+        ymin, xmin = corners[0], corners[1]
+        ymax, xmax = corners[2], corners[3]
+        xcen, ycen = (xmax+xmin)/2, (ymax+ymin)/2
+        d = distance
+
+        a_cen = alpha / apix * (apix-xcen)
+        a_left = alpha / apix * (apix-xmin)
+        a_right = alpha / apix * (apix-xmax)
+        a_top = alpha / apix * (apix-ymin)
+        a_bottom = alpha / apix * (apix-ymax)
+
+        """
+        pt_left = Vector3(x_cam + d*np.cos(theta+a_left), y_cam + d*np.sin(theta+a_left), z_cam + d*np.sin((a_top+a_bottom)/2))
+        pt_right = Vector3(x_cam + d*np.cos(theta+a_right), y_cam + d*np.sin(theta+a_right), z_cam + d*np.sin((a_top+a_bottom)/2))
+        pt_top = Vector3(x_cam + d*np.cos(theta+a_cen), y_cam + d*np.sin(theta+a_cen), z_cam + d*np.sin(a_top))
+        pt_bottom = Vector3(x_cam + d*np.cos(theta+a_cen), y_cam + d*np.sin(theta+a_cen), z_cam + d*np.sin(a_bottom))
+        """
+        pt_cen = Vector3(x_cam + d*np.cos(theta+a_cen), y_cam + d*np.sin(theta+a_cen), z_cam + d*np.sin((a_top+a_bottom)/2))
+        # pt_tl  = Vector3(x_cam + d*np.cos(theta+a_left), y_cam + d*np.sin(theta+a_left), z_cam + d*np.sin(a_top))
+        pt_bl  = Vector3(x_cam + d*np.cos(theta+a_left), y_cam + d*np.sin(theta+a_left), z_cam + d*np.sin(a_bottom))
+        pt_tr  = Vector3(x_cam + d*np.cos(theta+a_right), y_cam + d*np.sin(theta+a_right), z_cam + d*np.sin(a_top))
+        # pt_br  = Vector3(x_cam + d*np.cos(theta+a_right), y_cam + d*np.sin(theta+a_right), z_cam + d*np.sin(a_bottom))
+
+        return (pt_bl, pt_tr)
+        
+
 
     def euclidean_distance(self, p1, p2):
         """Return L2 distance between two Vector3 objects."""
@@ -115,19 +163,20 @@ class PoiLocator:
         confidence = detected_object.confidence  # simple approach to avoid false positives
         if confidence > self.CONFIDENCE_THRESH and name in PoiLocator.POI_NAMES:
             pos = self.localize_object(detected_object)
+            bounds = self.bound_object(detected_object)
             if name not in self.pois:
                 self.pois[name] = []
             is_new_spot = True
             for idx in range(len(self.pois[name])): # O(n) naive comparison
-                ref_pos, ref_dist = self.pois[name][idx]
+                ref_pos, _, ref_dist = self.pois[name][idx]
                 is_new_spot = (is_new_spot and
                                 self.euclidean_distance(pos, ref_pos) > PoiLocator.POI_EXCLUSION_DIST)
                 if not is_new_spot:
                     if dist < ref_dist:
-                        self.pois[name][idx] = (pos, dist) # Refine position
+                        self.pois[name][idx] = (pos, bounds, dist) # Refine position
                     break
             if is_new_spot:
-                self.pois[name].append((pos, dist))
+                self.pois[name].append((pos, bounds, dist))
         
 
     def register_zone(self, detected_object):
@@ -170,6 +219,8 @@ class PoiLocator:
                 poi.name = name
                 poi.is_target = False
                 poi.position = ls[idx][0]
+                poi.bounds_min = ls[idx][1][0]
+                poi.bounds_max = ls[idx][1][1]
                 msg.pois.append(poi)
         self.poi_pub.publish(msg)
 
