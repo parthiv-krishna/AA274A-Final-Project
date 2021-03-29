@@ -1,3 +1,6 @@
+# AA274A-Final-Project
+See `docs/AA274A Final Project Presentation.pdf` for a description of the project implementation.
+
 # final_project
 
 This contains a _starting point_ for your final project. Below are _brief_ descriptions of the code. You are strongly encouraged to take a closer look into the code for more details of how and what the code does.
